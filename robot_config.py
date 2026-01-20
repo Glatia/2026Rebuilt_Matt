@@ -32,6 +32,7 @@ def detect_robot() -> Robot:
     # Method 1: Check MAC address (RoboRIO MAC addresses are unique)
     try:
         mac_address = RobotController.getMACAddress()
+        print(f"MAC address: {mac_address}")
         # Replace these with your actual MAC addresses
         # You can find MAC addresses via: ssh admin@roborio-XXXX-frc.local "cat /sys/class/net/eth0/address"
         LARRY_MAC_ADDRESSES = [
@@ -70,7 +71,7 @@ def detect_robot() -> Robot:
     
     # Fallback: Default to COMP for competition, or set to LARRY for testing
     # Change this default based on your preference
-    return Robot.COMP  # or Robot.LARRY if you want to default to test robot
+    return Robot.LARRY  # or Robot.LARRY if you want to default to test robot
 
 
 # Detect robot at module load time
