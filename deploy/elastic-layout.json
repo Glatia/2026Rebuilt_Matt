@@ -1,0 +1,389 @@
+{
+  "version": 1.0,
+  "grid_size": 128,
+  "tabs": [
+    {
+      "name": "Main",
+      "grid_layout": {
+        "layouts": [],
+        "containers": [
+          {
+            "title": "Selected Auto",
+            "x": 256.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "ComboBox Chooser",
+            "properties": {
+              "topic": "/SmartDashboard/Selected Auto",
+              "period": 0.06,
+              "sort_options": false
+            }
+          },
+          {
+            "title": "Locked Auto",
+            "x": 512.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/AdvantageKit/NetworkInputs/SmartDashboard/Selected Auto",
+              "period": 0.06,
+              "data_type": "string",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "FullCycleMS",
+            "x": 256.0,
+            "y": 128.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Graph",
+            "properties": {
+              "topic": "/AdvantageKit/RealOutputs/LoggedRobot/FullCycleMS",
+              "period": 0.033,
+              "data_type": "double",
+              "time_displayed": 5.0,
+              "min_value": 0.0,
+              "max_value": 20.0,
+              "color": 4278238420,
+              "line_width": 2.0
+            }
+          },
+          {
+            "title": "BrakeModeEnabled",
+            "x": 512.0,
+            "y": 128.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/AdvantageKit/RealOutputs/Drive/BrakeModeEnabled",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "None"
+            }
+          },
+          {
+            "title": "CoastRequest",
+            "x": 512.0,
+            "y": 256.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/AdvantageKit/RealOutputs/Drive/CoastRequest",
+              "period": 0.06,
+              "data_type": "string",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "Tipping",
+            "x": 768.0,
+            "y": 0.0,
+            "width": 128.0,
+            "height": 384.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/AdvantageKit/RealOutputs/Drive/IsTipping",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "None"
+            }
+          },
+          {
+            "title": "Alerts",
+            "x": 0.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 384.0,
+            "type": "Alerts",
+            "properties": {
+              "topic": "/SmartDashboard/Alerts",
+              "period": 0.06
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Tuning",
+      "grid_layout": {
+        "layouts": [
+          {
+            "title": "Steer Gains",
+            "x": 0.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "List Layout",
+            "properties": {
+              "label_position": "LEFT"
+            },
+            "children": [
+              {
+                "title": "TurnkP",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Tuning/Drive/Module/TurnkP",
+                  "period": 0.06,
+                  "data_type": "double",
+                  "show_submit_button": false
+                }
+              },
+              {
+                "title": "TurnkD",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Tuning/Drive/Module/TurnkD",
+                  "period": 0.06,
+                  "data_type": "double",
+                  "show_submit_button": false
+                }
+              }
+            ]
+          },
+          {
+            "title": "Drive Gains",
+            "x": 256.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 384.0,
+            "type": "List Layout",
+            "properties": {
+              "label_position": "LEFT"
+            },
+            "children": [
+              {
+                "title": "DrivekP",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Tuning/Drive/Module/DrivekP",
+                  "period": 0.06,
+                  "data_type": "double",
+                  "show_submit_button": false
+                }
+              },
+              {
+                "title": "DrivekD",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Tuning/Drive/Module/DrivekD",
+                  "period": 0.06,
+                  "data_type": "double",
+                  "show_submit_button": false
+                }
+              },
+              {
+                "title": "DrivekS",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Tuning/Drive/Module/DrivekS",
+                  "period": 0.06,
+                  "data_type": "double",
+                  "show_submit_button": false
+                }
+              },
+              {
+                "title": "DrivekV",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Tuning/Drive/Module/DrivekV",
+                  "period": 0.06,
+                  "data_type": "double",
+                  "show_submit_button": false
+                }
+              },
+              {
+                "title": "DrivekT",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Tuning/Drive/Module/DrivekT",
+                  "period": 0.06,
+                  "data_type": "double",
+                  "show_submit_button": false
+                }
+              }
+            ]
+          },
+          {
+            "title": "Brake/Coast",
+            "x": 512.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "List Layout",
+            "properties": {
+              "label_position": "LEFT"
+            },
+            "children": [
+              {
+                "title": "CoastMetersPerSecThreshold",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Tuning/Drive/CoastMetersPerSecThreshold",
+                  "period": 0.06,
+                  "data_type": "double",
+                  "show_submit_button": false
+                }
+              },
+              {
+                "title": "CoastWaitTimeSeconds",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Tuning/Drive/CoastWaitTimeSeconds",
+                  "period": 0.06,
+                  "data_type": "double",
+                  "show_submit_button": false
+                }
+              }
+            ]
+          },
+          {
+            "title": "Force Gyro Inputs (Sim Only)",
+            "x": 512.0,
+            "y": 256.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "List Layout",
+            "properties": {
+              "label_position": "LEFT"
+            },
+            "children": [
+              {
+                "title": "SimulatedGyroPitch",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Tuning/Drive/SimulatedGyroPitch",
+                  "period": 0.06,
+                  "data_type": "double",
+                  "show_submit_button": false
+                }
+              },
+              {
+                "title": "SimulatedGyroRoll",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Tuning/Drive/SimulatedGyroRoll",
+                  "period": 0.06,
+                  "data_type": "double",
+                  "show_submit_button": false
+                }
+              }
+            ]
+          },
+          {
+            "title": "Anti Tip",
+            "x": 768.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "List Layout",
+            "properties": {
+              "label_position": "LEFT"
+            },
+            "children": [
+              {
+                "title": "TipKp",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Tuning/Drive/AntiTip/TipKp",
+                  "period": 0.06,
+                  "data_type": "double",
+                  "show_submit_button": false
+                }
+              },
+              {
+                "title": "TipThreshold",
+                "x": 0.0,
+                "y": 0.0,
+                "width": 128.0,
+                "height": 128.0,
+                "type": "Text Display",
+                "properties": {
+                  "topic": "/Tuning/Drive/AntiTip/TipThreshold",
+                  "period": 0.06,
+                  "data_type": "double",
+                  "show_submit_button": false
+                }
+              }
+            ]
+          }
+        ],
+        "containers": [
+          {
+            "title": "SkewCompensationScalar",
+            "x": 0.0,
+            "y": 256.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/Tuning/Drive/SkewCompensationScalar",
+              "period": 0.06,
+              "data_type": "double",
+              "show_submit_button": true
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

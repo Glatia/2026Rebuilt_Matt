@@ -8,8 +8,8 @@ from wpimath.geometry import Pose3d
 
 from constants import Constants
 from subsystems.intake import IntakeSubsystem
-from subsystems.swerve import SwerveSubsystem
-from subsystems.vision import VisionSubsystem
+from subsystems.drive import Drive
+from subsystems.vision import Vision
 from subsystems.climber import ClimberSubsystem
 
 
@@ -26,25 +26,26 @@ class Superstructure(Subsystem):
     # Map each goal to each subsystem state to reduce code complexity
     _goal_to_states: dict[Goal,
             tuple[
-                Optional[VisionSubsystem.SubsystemState]
+                Optional[Vision.SubsystemState]
             ]] = {
-        Goal.DEFAULT: (IntakeSubsystem.SubsystemState.STOP, VisionSubsystem.SubsystemState.ALL_ESTIMATES),
-        Goal.CLIMBING: (IntakeSubsystem.SubsystemState.STOP, VisionSubsystem.SubsystemState.ALL_ESTIMATES),
+        Goal.DEFAULT: (IntakeSubsystem.SubsystemState.STOP, Vision.SubsystemState.ALL_ESTIMATES),
+        Goal.CLIMBING: (IntakeSubsystem.SubsystemState.STOP, Vision.SubsystemState.ALL_ESTIMATES),
        
     }
 
-    def __init__(self, drivetrain: SwerveSubsystem, vision: VisionSubsystem, climber: ClimberSubsystem, intake: IntakeSubsystem) -> None:
+    def __init__(self, drivetrain: Drive, vision: Vision, climber: Optional[ClimberSubsystem] = None, intake: Optional[IntakeSubsystem] = None) -> None:
         """
         Constructs the superstructure using instance of each subsystem.
+        Subsystems are optional to support robots that don't have all hardware.
 
         :param drivetrain: Swerve drive base
-        :type drivetrain: SwerveSubsystem
+        :type drivetrain: Drive
         :param vision: Handles all vision estimates
-        :type vision: VisionSubsystem
-        :param climber: Subsystem that handles the climber
-        :type climber: ClimberSubsystem
-        :param intake: Subsystem that handles the intake
-        :type intake: IntakeSubsystem
+        :type vision: Vision
+        :param climber: Subsystem that handles the climber (optional)
+        :type climber: Optional[ClimberSubsystem]
+        :param intake: Subsystem that handles the intake (optional)
+        :type intake: Optional[IntakeSubsystem]
         """
         super().__init__()
         self.drivetrain = drivetrain
@@ -63,25 +64,30 @@ class Superstructure(Subsystem):
         if DriverStation.isDisabled():
             return
 
-        # If climber motor position is at the top position (1 is the placeholder for what the value would actually be), it will go to the full climb state
-        if self.climber.get_position() > Constants.ClimberConstants.CLIMB_FULL_THRESHOLD and self.climber.get_current_state() is ClimberSubsystem.SubsystemState.CLIMB_IN:
-            self.climber.set_desired_state(ClimberSubsystem.SubsystemState.CLIMB_IN_FULL)
+        # If climber exists and motor position is at the top position, it will go to the full climb state
+        if self.climber is not None:
+            if self.climber.get_position() > Constants.ClimberConstants.CLIMB_FULL_THRESHOLD and self.climber.get_current_state() is ClimberSubsystem.SubsystemState.CLIMB_IN:
+                self.climber.set_desired_state(ClimberSubsystem.SubsystemState.CLIMB_IN_FULL)
         # TODO add other subsystem periodic functions
 
     def _set_goal(self, goal: Goal) -> None:
         self._goal = goal
 
-        intake_state = self.intake.get_current_state()
-
         vision_state = self._goal_to_states.get(goal, (None, None, None, None))
-        safety_checks = self._should_enable_safety_checks(intake_state) # TODO pass states that are required for safety checks
         
         if vision_state:
             self.vision.set_desired_state(vision_state)
+        
+        # Handle intake if present
+        if self.intake is not None:
+            intake_state = self.intake.get_current_state()
+            safety_checks = self._should_enable_safety_checks(intake_state)  # TODO pass states that are required for safety checks
 
-
-    def _should_enable_safety_checks(self, intake_state: IntakeSubsystem.SubsystemState) -> bool:
+    def _should_enable_safety_checks(self, intake_state: Optional[IntakeSubsystem.SubsystemState]) -> bool:
         """ Safety check example of intake being in the frame """
+        if self.intake is None:
+            return True  # No safety checks needed if intake doesn't exist
+        
         if intake_state == self.intake.get_current_state():
             return False
         return not (

@@ -1,0 +1,447 @@
+{
+  "hubs": [
+    {
+      "x": -8,
+      "y": -8,
+      "width": 1722,
+      "height": 1034,
+      "state": {
+        "sidebar": {
+          "width": 372,
+          "expanded": [
+            "/PathPlanner/currentPose/rotation",
+            "/Pose",
+            "/Pose/robotPose/translation",
+            "/SmartDashboard/Field/Robot",
+            "/DS",
+            "/NT",
+            "/NT/limelight",
+            "/NT/limelight/robot_orientation_set",
+            "/Log0",
+            "/Log0/NT",
+            "/Log0/NT/Telemetry",
+            "/Log0/NT/Vision",
+            "/Log1",
+            "/Log1/Phoenix6",
+            "/Log1/Phoenix6/TalonFX-1",
+            "/Log1/Phoenix6/TalonFX-1/PIDTorqueCurrent",
+            "/Log0/NT/Telemetry/module_targets/3",
+            "/Log0/NT/Telemetry/module_targets/2",
+            "/Log0/NT/Telemetry/module_targets/1",
+            "/Log0/NT/Telemetry/module_targets/0",
+            "/Log0/NT/Vision/Visible Tabs",
+            "/Log0/NT/Vision/Visible Tabs/1/rotation",
+            "/Telemetry/module_targets/0",
+            "/Vision/Visible Tags",
+            "/Vision/Visible Tags/0",
+            "/Vision/Visible Tags/0/translation",
+            "/limelight-back/fiducial_id_filters_set",
+            "/Telemetry/current_pose",
+            "/Telemetry/current_pose/translation",
+            "/NT/CameraPublisher/USB Camera 0",
+            "/NT/LiveWindow/.status",
+            "/NT/Elevator",
+            "/NT/Vision",
+            "/NT/Telemetry",
+            "/NT/Superstructure",
+            "/NT/SmartDashboard",
+            "/NT/Shuffleboard",
+            "/NT/Pivot",
+            "/Superstructure/Components/0",
+            "/Superstructure/Components/0/rotation",
+            "/Superstructure/Components/0/rotation/q",
+            "/Superstructure/Component Targets/1/rotation",
+            "/Superstructure/Component Targets/1/rotation/q",
+            "/Superstructure/Component Targets/1/translation",
+            "/Telemetry/module_targets",
+            "/FMSInfo",
+            "/AdvantageKit",
+            "/AdvantageKit/RealOutputs/LoggedRobot",
+            "/AdvantageKit/RealOutputs/Logger",
+            "/Pivot/PivotAbsolutePosition",
+            "/Vision/limelight-front/PoseObservations",
+            "/SystemStats/CANBus",
+            "/NetworkInputs/SmartDashboard",
+            "/RealOutputs/DriveSubsystem",
+            "/Tuning/Drive",
+            "/RealOutputs/RobotState",
+            "/RealOutputs/Drive/States/Measured/0",
+            "/RealOutputs/test",
+            "/RealOutputs/PathPlanner/TargetPose",
+            "/RealOutputs/LoggedTracer",
+            "/RealOutputs",
+            "/RealOutputs/LoggedRobot",
+            "/RealOutputs/LoggedTracer/Drive",
+            "/RealOutputs/Drive"
+          ]
+        },
+        "tabs": {
+          "selected": 1,
+          "tabs": [
+            {
+              "type": 0,
+              "title": "",
+              "controller": null,
+              "controllerUUID": "vrfifz3f3nnnj5rb8apz6vhtk4ln8xuz",
+              "renderer": "",
+              "controlsHeight": 0
+            },
+            {
+              "type": 3,
+              "title": "3D Field",
+              "controller": {
+                "sources": [
+                  {
+                    "type": "robot",
+                    "logKey": "/RealOutputs/Drive/EstimatedPosition3d",
+                    "logType": "Pose3d",
+                    "visible": true,
+                    "options": {
+                      "model": "Leviathan"
+                    }
+                  },
+                  {
+                    "type": "swerveStates",
+                    "logKey": "/RealOutputs/Drive/States/Measured",
+                    "logType": "SwerveModuleState[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#ff0000",
+                      "arrangement": "0,1,2,3"
+                    }
+                  },
+                  {
+                    "type": "swerveStates",
+                    "logKey": "/RealOutputs/Drive/States/SetpointsOptimized",
+                    "logType": "SwerveModuleState[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#0000ff",
+                      "arrangement": "0,1,2,3"
+                    }
+                  },
+                  {
+                    "type": "swerveStates",
+                    "logKey": "/RealOutputs/Drive/States/ModuleForces",
+                    "logType": "SwerveModuleState[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#ff8c00",
+                      "arrangement": "0,1,2,3"
+                    }
+                  },
+                  {
+                    "type": "trajectory",
+                    "logKey": "/RealOutputs/PathPlanner/ActivePath",
+                    "logType": "Pose2d[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#ff8c00",
+                      "size": "normal"
+                    }
+                  },
+                  {
+                    "type": "ghost",
+                    "logKey": "/RealOutputs/PathPlanner/TargetPose",
+                    "logType": "Pose2d",
+                    "visible": true,
+                    "options": {
+                      "model": "Leviathan",
+                      "color": "#ff8c00"
+                    }
+                  },
+                  {
+                    "type": "ghost",
+                    "logKey": "/RealOutputs/Drive/TargetBranch",
+                    "logType": "Pose2d",
+                    "visible": true,
+                    "options": {
+                      "model": "Leviathan",
+                      "color": "#00ffff"
+                    }
+                  }
+                ],
+                "game": "FRC:2026 Field"
+              },
+              "controllerUUID": "f9z2hljqspx3u7iqm05miq2nbzknu44h",
+              "renderer": {
+                "cameraIndex": -1,
+                "orbitFov": 90,
+                "cameraPosition": [
+                  7.2906442996153675,
+                  9.893080306833795,
+                  0.06291303627131596
+                ],
+                "cameraTarget": [
+                  -2.475680367813828,
+                  -4.787999999821186,
+                  0.1194611289666285
+                ]
+              },
+              "controlsHeight": 200
+            },
+            {
+              "type": 2,
+              "title": "2D Odometry",
+              "controller": {
+                "sources": [
+                  {
+                    "type": "robot",
+                    "logKey": "/RealOutputs/Drive/EstimatedPosition",
+                    "logType": "Pose2d",
+                    "visible": true,
+                    "options": {
+                      "bumpers": ""
+                    }
+                  }
+                ],
+                "field": "FRC:2026 Field",
+                "orientation": 0,
+                "size": "large"
+              },
+              "controllerUUID": "qezh8hsr65kmyrjnunz7vuend455zft5",
+              "renderer": null,
+              "controlsHeight": 200
+            },
+            {
+              "type": 1,
+              "title": "MS Times",
+              "controller": {
+                "leftSources": [
+                  {
+                    "type": "smooth",
+                    "logKey": "/RealOutputs/LoggedRobot/FullCycleMS",
+                    "logType": "Number",
+                    "visible": false,
+                    "options": {
+                      "color": "#2b66a2",
+                      "size": "normal"
+                    }
+                  },
+                  {
+                    "type": "smooth",
+                    "logKey": "/RealOutputs/LoggedRobot/LogPeriodicMS",
+                    "logType": "Number",
+                    "visible": false,
+                    "options": {
+                      "color": "#e5b31b",
+                      "size": "normal"
+                    }
+                  },
+                  {
+                    "type": "smooth",
+                    "logKey": "/RealOutputs/LoggedRobot/UserCodeMS",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#af2437",
+                      "size": "normal"
+                    }
+                  },
+                  {
+                    "type": "smooth",
+                    "logKey": "/RealOutputs/LoggedTracer/Drive/InputsMS",
+                    "logType": "Number",
+                    "visible": false,
+                    "options": {
+                      "color": "#80588e",
+                      "size": "normal"
+                    }
+                  },
+                  {
+                    "type": "smooth",
+                    "logKey": "/RealOutputs/LoggedTracer/Drive/PeriodicMS",
+                    "logType": "Number",
+                    "visible": false,
+                    "options": {
+                      "color": "#e48b32",
+                      "size": "normal"
+                    }
+                  }
+                ],
+                "rightSources": [],
+                "discreteSources": [
+                  {
+                    "type": "stripes",
+                    "logKey": "/DriverStation/Autonomous",
+                    "logType": "Boolean",
+                    "visible": true,
+                    "options": {
+                      "color": "#858584"
+                    }
+                  },
+                  {
+                    "type": "stripes",
+                    "logKey": "/DriverStation/Enabled",
+                    "logType": "Boolean",
+                    "visible": true,
+                    "options": {
+                      "color": "#c0b487"
+                    }
+                  }
+                ],
+                "leftLockedRange": null,
+                "rightLockedRange": null,
+                "leftUnitConversion": {
+                  "autoTarget": null,
+                  "preset": null
+                },
+                "rightUnitConversion": {
+                  "autoTarget": null,
+                  "preset": null
+                },
+                "leftFilter": 0,
+                "rightFilter": 0
+              },
+              "controllerUUID": "8qq2ur8psz5nnpls64x6ziy0tnglbstw",
+              "renderer": null,
+              "controlsHeight": 200
+            },
+            {
+              "type": 6,
+              "title": "Mean Loop Time",
+              "controller": {
+                "sources": [
+                  {
+                    "type": "independent",
+                    "logKey": "/RealOutputs/LoggedRobot/FullCycleMS",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#2b66a2"
+                    }
+                  },
+                  {
+                    "type": "independent",
+                    "logKey": "/RealOutputs/LoggedRobot/UserCodeMS",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#e5b31b"
+                    }
+                  },
+                  {
+                    "type": "independent",
+                    "logKey": "/RealOutputs/LoggedRobot/LogPeriodicMS",
+                    "logType": "Number",
+                    "visible": false,
+                    "options": {
+                      "color": "#af2437"
+                    }
+                  },
+                  {
+                    "type": "independent",
+                    "logKey": "/RealOutputs/LoggedTracer/Drive/InputsMS",
+                    "logType": "Number",
+                    "visible": false,
+                    "options": {
+                      "color": "#80588e"
+                    }
+                  },
+                  {
+                    "type": "independent",
+                    "logKey": "/RealOutputs/LoggedTracer/Drive/PeriodicMS",
+                    "logType": "Number",
+                    "visible": false,
+                    "options": {
+                      "color": "#e48b32"
+                    }
+                  }
+                ],
+                "timeRange": "live-10",
+                "rangeMin": 0,
+                "rangeMax": 5,
+                "stepSize": 0.3
+              },
+              "controllerUUID": "hlbki714cwwbcz73nkd70dbwjba2awbd",
+              "renderer": null,
+              "controlsHeight": 200
+            },
+            {
+              "type": 12,
+              "title": "Metadata",
+              "controller": null,
+              "controllerUUID": "gjr6p43yb357iqlb7j0ar5341xfmlvod",
+              "renderer": null,
+              "controlsHeight": 0
+            },
+            {
+              "type": 9,
+              "title": "Swerve",
+              "controller": {
+                "sources": [
+                  {
+                    "type": "rotation",
+                    "logKey": "/RealOutputs/Drive/EstimatedPosition/rotation",
+                    "logType": "Rotation2d",
+                    "visible": true,
+                    "options": {}
+                  },
+                  {
+                    "type": "states",
+                    "logKey": "/RealOutputs/Drive/States/SetpointsOptimized",
+                    "logType": "SwerveModuleState[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#0000ff",
+                      "arrangement": "0,1,2,3"
+                    }
+                  },
+                  {
+                    "type": "states",
+                    "logKey": "/RealOutputs/Drive/States/Measured",
+                    "logType": "SwerveModuleState[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#ff0000",
+                      "arrangement": "0,1,2,3"
+                    }
+                  },
+                  {
+                    "type": "chassisSpeeds",
+                    "logKey": "/RealOutputs/Drive/ChassisSpeeds/Setpoints",
+                    "logType": "ChassisSpeeds",
+                    "visible": true,
+                    "options": {
+                      "color": "#0000ff"
+                    }
+                  },
+                  {
+                    "type": "chassisSpeeds",
+                    "logKey": "/RealOutputs/Drive/ChassisSpeeds/Measured",
+                    "logType": "ChassisSpeeds",
+                    "visible": true,
+                    "options": {
+                      "color": "#ff0000"
+                    }
+                  }
+                ],
+                "maxSpeed": 4.2,
+                "sizeX": 0.93,
+                "sizeY": 0.93,
+                "orientation": 1
+              },
+              "controllerUUID": "6htoa99qkmi0x7qwvkuqlvv5yi33kh8i",
+              "renderer": null,
+              "controlsHeight": 200
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "satellites": [
+    {
+      "x": 1008,
+      "y": 130,
+      "width": 658,
+      "height": 686,
+      "state": {
+        "type": 9,
+        "visualizer": null
+      },
+      "uuid": "wf3ug9xlldsl8ht8nvov8m0cven0h4xz"
+    }
+  ],
+  "version": "26.0.0"
+}

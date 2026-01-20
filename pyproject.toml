@@ -1,0 +1,17 @@
+[tool.robotpy]
+
+robotpy_version = "2026.2.1"
+
+components = [
+    "commands2"
+]
+
+# Other pip packages to install
+requires = [
+    "robotpy-pykit",
+    "robotpy-opencv; platform_machine == 'roborio'",
+    "opencv-python; platform_machine != 'roborio'",
+    "phoenix6",
+    "robotpy-apriltag",
+    "robotpy-pathplannerlib"
+]
