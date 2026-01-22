@@ -7,6 +7,7 @@ This module detects which robot is running and provides the appropriate hardware
 import socket
 from enum import Enum, auto
 from typing import Final
+import uuid
 
 from wpilib import RobotController
 
@@ -16,6 +17,14 @@ class Robot(Enum):
     LARRY = auto()  # Test robot
     COMP = auto()   # Competition robot
     UNKNOWN = auto()  # Fallback if detection fails
+
+
+def get_mac_address():
+    # Get the MAC address as a 48-bit integer
+    mac_num = uuid.getnode()
+    # Format the integer into a hexadecimal string with colons
+    mac = ':'.join(f'{((mac_num >> i) & 0xff):02x}' for i in range(0, 12*4, 8))[::-1]
+    return mac
 
 
 def detect_robot() -> Robot:
@@ -29,14 +38,15 @@ def detect_robot() -> Robot:
     
     :return: The detected robot
     """
+    print("Attempting to detect which robot we are connected to")
     # Method 1: Check MAC address (RoboRIO MAC addresses are unique)
     try:
-        mac_address = RobotController.getMACAddress()
+        mac_address = get_mac_address() or "Undefined"
         print(f"MAC address: {mac_address}")
         # Replace these with your actual MAC addresses
         # You can find MAC addresses via: ssh admin@roborio-XXXX-frc.local "cat /sys/class/net/eth0/address"
         LARRY_MAC_ADDRESSES = [
-            "00:80:2f:33:9f:1d",  # Replace with Larry's actual MAC
+            "00:08:f2:33:f9:d1",  # Replace with Larry's actual MAC
             # Add other possible MAC addresses for Larry if it has multiple interfaces
         ]
         COMP_MAC_ADDRESSES = [
@@ -45,8 +55,10 @@ def detect_robot() -> Robot:
         ]
         
         if mac_address in LARRY_MAC_ADDRESSES:
+            print("Mac address is for Larry")
             return Robot.LARRY
         if mac_address in COMP_MAC_ADDRESSES:
+            print("Mac address is for Comp robot.")
             return Robot.COMP
     except Exception:
         pass
