@@ -1,29 +1,26 @@
 import math
 import os.path
 
-import commands2.button
+import commands2
+from commands2.button import CommandXboxController, Trigger
 from commands2 import cmd, Command
-from commands2.button import CommandXboxController
 from pathplannerlib.auto import AutoBuilder, PathPlannerAuto
 from pathplannerlib.util import FlippingUtil
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
-from wpilib import getDeployDirectory
+from wpilib import getDeployDirectory, SmartDashboard
 from wpimath.geometry import Pose2d, Rotation2d
+from phoenix6 import swerve
 
-import commands
-from commands import fieldRelative
 from typing import Optional
 from constants import Constants
+from generated.tuner_constants import TunerConstants
 from robot_config import currentRobot, has_subsystem  # Robot detection (Larry vs Comp)
-from subsystems.drive import Drive
+from subsystems.swerve import SwerveSubsystem
+from subsystems.swerve.requests import DriverAssist
 from subsystems.climber import ClimberSubsystem
 from subsystems.climber.io import ClimberIOTalonFX, ClimberIOSim
 from subsystems.intake import IntakeSubsystem
-from subsystems.drive.gyro import GyroIOPigeon2, GyroIOSim
-from subsystems.drive.module import ModuleIOTalonFX, ModuleIOSim
-from subsystems.toast import moduleConfigs
-from subsystems.vision import Vision
-from subsystems.vision.io import VisionIOLimelight 
+# from subsystems.vision import VisionSubsystem
 
 from phoenix6.configs import TalonFXConfiguration
 from phoenix6.configs.config_groups import NeutralModeValue, MotorOutputConfigs, FeedbackConfigs
@@ -32,7 +29,7 @@ from pykit.logger import Logger
 
 class RobotContainer:
     def __init__(self) -> None:
-        self._driver = CommandXboxController(0)
+        self._driver_controller = CommandXboxController(0)
         
         # Log which robot we're running on (for debugging)
         Logger.recordMetadata("Robot", currentRobot.name)
@@ -45,18 +42,19 @@ class RobotContainer:
         match Constants.currentMode:
             case Constants.Mode.REAL:
                 # Real robot, instantiate hardware IO implementations
-                self._drivetrain = Drive(
-                    GyroIOPigeon2(),
-                    ModuleIOTalonFX(moduleConfigs[0]),
-                    ModuleIOTalonFX(moduleConfigs[1]),
-                    ModuleIOTalonFX(moduleConfigs[2]),
-                    ModuleIOTalonFX(moduleConfigs[3]),
-                    lambda _: None
-                )
-                self._vision = Vision(
-                    self._drivetrain.addVisionMeasurement,
-                    VisionIOLimelight("limelight", self._drivetrain.getRotation)
-                )
+                if has_subsystem("drivetrain"):
+                    self._drivetrain = TunerConstants.create_drivetrain()
+                
+                """
+                if has_subsystem("vision"):
+                    self._vision = VisionSubsystem(
+                        self._drivetrain,
+                        Constants.VisionConstants.FRONT_RIGHT,
+                        Constants.VisionConstants.FRONT_CENTER,
+                        Constants.VisionConstants.FRONT_LEFT,
+                        #Constants.VisionConstants.BACK_CENTER,
+                    )
+                """
 
                 # Create climber only if it exists on this robot
                 if has_subsystem("climber"):
@@ -85,18 +83,16 @@ class RobotContainer:
 
             case Constants.Mode.SIM:
                 # Sim robot, instantiate physics sim IO implementations (if available)
-                self._drivetrain = Drive(
-                    GyroIOSim(),
-                    ModuleIOSim(moduleConfigs[0]),
-                    ModuleIOSim(moduleConfigs[1]),
-                    ModuleIOSim(moduleConfigs[2]),
-                    ModuleIOSim(moduleConfigs[3]),
-                    lambda _: None
+                self._drivetrain = TunerConstants.create_drivetrain()
+                """
+                self._vision = VisionSubsystem(
+                    self._drivetrain,
+                    Constants.VisionConstants.FRONT_RIGHT,
+                    Constants.VisionConstants.FRONT_CENTER,
+                    Constants.VisionConstants.FRONT_LEFT,
+                    #Constants.VisionConstants.BACK_CENTER,
                 )
-                self._vision = Vision(
-                    self._drivetrain.addVisionMeasurement,
-                    VisionIOLimelight("limelight", self._drivetrain.getRotation)
-                )
+                """
 
                 # Create climber only if it exists on this robot
                 if has_subsystem("climber"):
@@ -116,9 +112,13 @@ class RobotContainer:
             self.autoChooser.addOption(file, PathPlannerAuto(file, False))
             self.autoChooser.addOption(f"{file} (Mirrored)", PathPlannerAuto(file, True))
         self.autoChooser.setDefaultOption("None", cmd.none())
+        self.autoChooser.onChange(
+            lambda _: self._set_correct_swerve_position()
+        )
         self.autoChooser.addOption("Basic Leave",
-        self._drivetrain.run(lambda: commands.robotRelative(self._drivetrain, lambda: 0.25, lambda: 0, lambda: 0)).withTimeout(1.0))
-
+            self._drivetrain.apply_request(lambda: self._robot_centric.with_velocity_x(1)).withTimeout(1.0)
+        )
+        # SmartDashboard.putData("Selected Auto", self.autoChooser)
         self.setupControllerBindings()
 
     def readyRobotForMatch(self) -> None:
@@ -131,58 +131,88 @@ class RobotContainer:
 
     def setupControllerBindings(self) -> None:
         # DRIVE CONTROLLER
-        self._drivetrain.setDefaultCommand(fieldRelative(
-            self._drivetrain,
-            lambda: -self._driver.getLeftY(),
-            lambda: -self._driver.getLeftX(),
-            lambda: -self._driver.getRightX()
-        ))
-
-        # Left bumper: Robot relative
-        self._driver.leftBumper().whileTrue(
-            commands.robotRelative(
-                self._drivetrain,
-                lambda: -self._driver.getLeftY(),
-                lambda: -self._driver.getLeftX(),
-                lambda: -self._driver.getRightX()
+        hid = self._driver_controller.getHID()
+        self._drivetrain.setDefaultCommand(
+            self._drivetrain.apply_request(
+                lambda: self._field_centric
+                .with_velocity_x(-hid.getLeftY() * self._max_speed)
+                .with_velocity_y(-hid.getLeftX() * self._max_speed)
+                .with_rotational_rate(-self._driver_controller.getRightX() * self._max_angular_rate)
             )
         )
 
-        # A: X-brake
-        self._driver.a().whileTrue(commands.brakeWithX(self._drivetrain))
-
-        # Left trigger: Align to closest left branch
-        self._driver.leftTrigger().whileTrue(
-            commands.alignToClosestBranch(
-                self._drivetrain,
-                commands.BranchSide.LEFT,
-                lambda: -self._driver.getLeftY(),
-                lambda: -self._driver.getLeftX()
-            )
-        )
-
-        # Right trigger: Align to closest right branch
-        self._driver.rightTrigger().whileTrue(
-            commands.alignToClosestBranch(
-                self._drivetrain,
-                commands.BranchSide.RIGHT,
-                lambda: -self._driver.getLeftY(),
-                lambda: -self._driver.getLeftX()
+        self._driver_controller.leftBumper().whileTrue(
+            self._drivetrain.apply_request(
+                lambda: self._robot_centric
+                .with_velocity_x(-hid.getLeftY() * self._max_speed)
+                .with_velocity_y(-hid.getLeftX() * self._max_speed)
+                .with_rotational_rate(-self._driver_controller.getRightX() * self._max_angular_rate)
             )
         )
 
         # Reset gyro to 0 when start button is pressed.
-        self._driver.start().onTrue(cmd.runOnce(
+        self._driver_controller.start().onTrue(cmd.runOnce(
             lambda: self._drivetrain.setPose(
                 Pose2d(self._drivetrain.getPose().translation(), Rotation2d() + Rotation2d(math.pi) if AutoBuilder.shouldFlip() else Rotation2d())
             ), self._drivetrain
         ).ignoringDisable(True))
 
-        # Feedforward characterization
-        self._driver.x().whileTrue(commands.feedforwardCharacterization(self._drivetrain))
+        self._driver_controller.a().whileTrue(self._drivetrain.apply_request(lambda: self._brake))
+        self._driver_controller.b().whileTrue(
+            self._drivetrain.apply_request(
+                lambda: self._point.with_module_direction(Rotation2d(-hid.getLeftY(), -hid.getLeftX()))
+            )
+        )
 
-        # Wheel radius characterization
-        self._driver.b().whileTrue(commands.wheelRadiusCharacterization(self._drivetrain))
+        Trigger(lambda: self._driver_controller.getLeftTriggerAxis() > 0.75).onTrue(
+            self._drivetrain.runOnce(lambda: self._driver_assist.with_target_pose(self._drivetrain.get_closest_branch(self._drivetrain.BranchSide.LEFT)))
+        ).whileTrue(
+            self._drivetrain.apply_request(
+                lambda: self._driver_assist
+                .with_velocity_x(-hid.getLeftY() * self._max_speed)
+                .with_velocity_y(-hid.getLeftX() * self._max_speed)
+            )
+        )
+
+        Trigger(lambda: self._driver_controller.getRightTriggerAxis() > 0.75).onTrue(
+            self._drivetrain.runOnce(lambda: self._driver_assist.with_target_pose(self._drivetrain.get_closest_branch(self._drivetrain.BranchSide.RIGHT)))
+        ).whileTrue(
+            self._drivetrain.apply_request(
+                lambda: self._driver_assist
+                .with_velocity_x(-hid.getLeftY() * self._max_speed)
+                .with_velocity_y(-hid.getLeftX() * self._max_speed)
+            )
+        )
+
+    def _setup_swerve_requests(self):
+        self._field_centric = (
+            swerve.requests.FieldCentric()
+            .with_deadband(0)
+            .with_rotational_deadband(0)
+            .with_drive_request_type(swerve.SwerveModule.DriveRequestType.VELOCITY)
+            .with_steer_request_type(swerve.SwerveModule.SteerRequestType.POSITION)
+        )
+
+        self._robot_centric: swerve.requests.RobotCentric = (
+            swerve.requests.RobotCentric()
+            .with_deadband(0)
+            .with_rotational_deadband(0)
+            .with_drive_request_type(swerve.SwerveModule.DriveRequestType.VELOCITY)
+            .with_steer_request_type(swerve.SwerveModule.SteerRequestType.POSITION)
+        )
+
+        self._driver_assist: DriverAssist = (
+            DriverAssist()
+            .with_deadband(self._max_speed * 0.01)
+            .with_rotational_deadband(self._max_angular_rate * 0.02)
+            .with_drive_request_type(swerve.SwerveModule.DriveRequestType.VELOCITY)
+            .with_steer_request_type(swerve.SwerveModule.SteerRequestType.POSITION)
+            .with_translation_pid(Constants.AutoAlignConstants.TRANSLATION_P, Constants.AutoAlignConstants.TRANSLATION_I, Constants.AutoAlignConstants.TRANSLATION_D)
+            .with_heading_pid(Constants.AutoAlignConstants.HEADING_P, Constants.AutoAlignConstants.HEADING_I, Constants.AutoAlignConstants.HEADING_D)
+        )
+        
+        self._brake = swerve.requests.SwerveDriveBrake()
+        self._point = swerve.requests.PointWheelsAt()
 
     def get_autonomous_command(self) -> commands2.Command:
         return self.autoChooser.getSelected()
