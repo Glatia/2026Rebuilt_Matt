@@ -1,30 +1,74 @@
-import os.path
-
-from commands2 import CommandScheduler, TimedCommandRobot
+import wpilib
+from commands2 import CommandScheduler
 from cscore import CameraServer
 from ntcore import NetworkTableInstance
 from phoenix6 import SignalLogger
+from pykit.loggedrobot import LoggedRobot
+from pykit.logger import Logger
+from pykit.logreplaysource import LogReplaySource
+from pykit.networktables.nt4Publisher import NT4Publisher
+from pykit.wpilog.wpilogwriter import WPILOGWriter
 from wpilib import DataLogManager, DriverStation, Timer
-from wpinet import WebServer, PortForwarder
 
+import robot_config
 from constants import Constants
 from lib import elasticlib
 from lib.elasticlib import Notification, NotificationLevel
 from robot_container import RobotContainer
 
 
-class Oasis(TimedCommandRobot):
+class Oasis(LoggedRobot):
 
     def __init__(self, period = 0.02) -> None:
-        super().__init__(period)
+        super().__init__()
+
+        Logger.recordMetadata("Robot", robot_config.currentRobot.name.title())
+
+        match Constants.currentMode:
+            # Running on a real robot, log to a USB stick ("/U/logs")
+            case Constants.Mode.REAL:
+                deploy_config = wpilib.deployinfo.getDeployData()
+                if deploy_config is not None:
+                    Logger.recordMetadata(
+                        "Deploy Host", deploy_config.get("deploy-host", "")
+                    )
+                    Logger.recordMetadata(
+                        "Deploy User", deploy_config.get("deploy-user", "")
+                    )
+                    Logger.recordMetadata(
+                        "Deploy Date", deploy_config.get("deploy-date", "")
+                    )
+                    Logger.recordMetadata(
+                        "Code Path", deploy_config.get("code-path", "")
+                    )
+                    Logger.recordMetadata("Git Hash", deploy_config.get("git-hash", ""))
+                    Logger.recordMetadata(
+                        "Git Branch", deploy_config.get("git-branch", "")
+                    )
+                    Logger.recordMetadata(
+                        "Git Description", deploy_config.get("git-desc", "")
+                    )
+                Logger.addDataReciever(WPILOGWriter())
+                Logger.addDataReciever(NT4Publisher(True))
+
+            # Running a physics simulator, log to NT
+            case Constants.Mode.SIM:
+                Logger.addDataReciever(NT4Publisher(True))
+
+            # Replaying a log, set up replay source
+            case Constants.Mode.REPLAY:
+                self.useTiming = False
+                Logger.setReplaySource(LogReplaySource())
+                Logger.addDataReciever(WPILOGWriter(None))
+
+        # Start PyKit logger
+        Logger.start()
 
         DriverStation.silenceJoystickConnectionWarning(not DriverStation.isFMSAttached())
         self.container = RobotContainer()
 
         SignalLogger.enable_auto_logging(False)
-        SignalLogger.stop()
-        DataLogManager.start(period=0.3)
-        #DriverStation.startDataLog(DataLogManager.getLog())
+        wpilib.LiveWindow.disableAllTelemetry()
 
         CameraServer.startAutomaticCapture()
         CameraServer.startAutomaticCapture()
@@ -40,22 +84,14 @@ class Oasis(TimedCommandRobot):
         dashboard_nt = NetworkTableInstance.getDefault().getTable("Elastic")
         self._match_time_pub = dashboard_nt.getFloatTopic("Match Time").publish()
 
-    @staticmethod
-    def get_deploy_directory():
-        if os.path.exists("/home/lvuser"):
-            return "/home/lvuser/py/deploy"
-        else:
-            return os.path.join(os.getcwd(), "deploy")
-
     def robotPeriodic(self) -> None:
+        CommandScheduler.getInstance().run()
         self._match_time_pub.set(Timer.getMatchTime())
 
     def _simulationPeriodic(self) -> None:
         pass
 
     def autonomousInit(self) -> None:
-        DataLogManager.log("Autonomous period started")
-
         selected_auto = self.container.get_autonomous_command()
         if selected_auto is not None:
             DataLogManager.log(f"Selected Auto: {selected_auto.getName()}")
@@ -72,6 +108,7 @@ class Oasis(TimedCommandRobot):
             
     def teleopInit(self) -> None:
         DataLogManager.log("Teleoperated period started")
+        self.container.get_autonomous_command().cancel()
 
     def teleopExit(self) -> None:
         DataLogManager.log("Teleoperated period ended")
@@ -97,7 +134,7 @@ class Oasis(TimedCommandRobot):
         self.container.vision.set_throttle(0)
 
     def testExit(self):
-        DataLogManager.log("Test period ended")
+        pass
     
     def disabledPeriodic(self) -> None:
         pass

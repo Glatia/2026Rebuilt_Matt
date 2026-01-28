@@ -1,30 +1,30 @@
 import os
+from typing import Optional
 
 import commands2
 import commands2.button
 from commands2 import cmd, InstantCommand
-from commands2.button import CommandXboxController, Trigger
-from pathplannerlib.auto import NamedCommands, PathPlannerAuto
-from phoenix6 import swerve, utils
-from wpilib import DriverStation, SendableChooser, XboxController, SmartDashboard, getDeployDirectory
-from wpimath.geometry import Rotation2d, Pose2d
+from commands2.button import CommandXboxController
+from pathplannerlib.auto import NamedCommands, PathPlannerAuto, AutoBuilder
+from pathplannerlib.util import FlippingUtil
+from phoenix6 import swerve
+from phoenix6.configs import TalonFXConfiguration
+from phoenix6.configs.config_groups import NeutralModeValue, MotorOutputConfigs, FeedbackConfigs
+from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
+from wpilib import XboxController, getDeployDirectory
+from wpimath.geometry import Rotation2d
 from wpimath.units import rotationsToRadians
-from robot_config import currentRobot, has_subsystem, Robot # Robot detection (Larry vs Comp)
 
 from constants import Constants
-from generated.tuner_constants import TunerConstants
 from generated.larry.tuner_constants import TunerConstants as LarryTunerConstants
+from generated.tuner_constants import TunerConstants
+from robot_config import currentRobot, has_subsystem, Robot  # Robot detection (Larry vs Comp)
 from subsystems.climber import ClimberSubsystem
 from subsystems.climber.io import ClimberIOTalonFX, ClimberIOSim
 from subsystems.intake import IntakeSubsystem
 from subsystems.superstructure import Superstructure
 from subsystems.swerve import SwerveSubsystem
-from subsystems.swerve.requests import DriverAssist
 from subsystems.vision import VisionSubsystem
-from typing import Optional
-from phoenix6.configs import TalonFXConfiguration
-from phoenix6.configs.config_groups import NeutralModeValue, MotorOutputConfigs, FeedbackConfigs
-from pykit.logger import Logger
 
 
 class RobotContainer:
@@ -110,6 +110,13 @@ class RobotContainer:
         self._pathplanner_setup()
         self._setup_controller_bindings()
 
+    def set_robot_pose(self, command: commands2.Command) -> None:
+        if isinstance(command, PathPlannerAuto):
+            pose = command._startingPose
+            if AutoBuilder.shouldFlip():
+                pose = FlippingUtil.flipFieldPose(pose)
+            self.drivetrain.reset_pose(pose)
+
     def _pathplanner_setup(self):
         # Register NamedCommands
         NamedCommands.registerCommand("Default", self.superstructure.set_goal_command(Superstructure.Goal.DEFAULT))
@@ -118,7 +125,7 @@ class RobotContainer:
         NamedCommands.registerCommand("Climb", self.superstructure.set_goal_command(Superstructure.Goal.CLIMB))
 
         # Build AutoChooser
-        self._auto_chooser = SendableChooser()
+        self._auto_chooser: LoggedDashboardChooser[commands2.Command] = LoggedDashboardChooser("Auto")
 
         for auto in os.listdir(os.path.join(getDeployDirectory(), 'pathplanner', 'autos')):
             auto = auto.removesuffix(".auto")
@@ -127,30 +134,11 @@ class RobotContainer:
             self._auto_chooser.addOption(auto, PathPlannerAuto(auto, False))
             self._auto_chooser.addOption(auto + " (Mirrored)", PathPlannerAuto(auto, True))
         self._auto_chooser.setDefaultOption("None", cmd.none())
-        self._auto_chooser.onChange(
-            lambda _: self._set_correct_swerve_position()
-        )
         self._auto_chooser.addOption("Basic Leave",
             self.drivetrain.apply_request(lambda: self._robot_centric.with_velocity_x(1)).withTimeout(1.0)
         )
-        SmartDashboard.putData("Selected Auto", self._auto_chooser)
 
-    def _set_correct_swerve_position(self) -> None:
-        chooser_selected = self._auto_chooser.getSelected()
-        try:
-            self.drivetrain.reset_pose(self._flip_pose_if_needed(chooser_selected._startingPose))
-            self.drivetrain.reset_rotation(chooser_selected._startingPose.rotation() + self.drivetrain.get_operator_forward_direction())
-        except AttributeError:
-            pass
-
-    @staticmethod
-    def _flip_pose_if_needed(pose: Pose2d) -> Pose2d:
-        if (DriverStation.getAlliance() or DriverStation.Alliance.kBlue) == DriverStation.Alliance.kRed:
-            flipped_x = Constants.FIELD_LAYOUT.getFieldLength() - pose.X()
-            flipped_y = Constants.FIELD_LAYOUT.getFieldWidth() - pose.Y()
-            flipped_rotation = Rotation2d(pose.rotation().radians()) + Rotation2d.fromDegrees(180)
-            return Pose2d(flipped_x, flipped_y, flipped_rotation)
-        return pose
+        self._auto_chooser.onChange(self.set_robot_pose)
 
     def _setup_swerve_requests(self):
         self._field_centric = (
@@ -167,16 +155,6 @@ class RobotContainer:
             .with_rotational_deadband(0)
             .with_drive_request_type(swerve.SwerveModule.DriveRequestType.VELOCITY)
             .with_steer_request_type(swerve.SwerveModule.SteerRequestType.POSITION)
-        )
-
-        self._driver_assist: DriverAssist = (
-            DriverAssist()
-            .with_deadband(self._max_speed * 0.01)
-            .with_rotational_deadband(self._max_angular_rate * 0.02)
-            .with_drive_request_type(swerve.SwerveModule.DriveRequestType.VELOCITY)
-            .with_steer_request_type(swerve.SwerveModule.SteerRequestType.POSITION)
-            .with_translation_pid(Constants.AutoAlignConstants.TRANSLATION_P, Constants.AutoAlignConstants.TRANSLATION_I, Constants.AutoAlignConstants.TRANSLATION_D)
-            .with_heading_pid(Constants.AutoAlignConstants.HEADING_P, Constants.AutoAlignConstants.HEADING_I, Constants.AutoAlignConstants.HEADING_D)
         )
         
         self._brake = swerve.requests.SwerveDriveBrake()
@@ -228,27 +206,6 @@ class RobotContainer:
         self._driver_controller.b().whileTrue(
             self.drivetrain.apply_request(
                 lambda: self._point.with_module_direction(Rotation2d(-hid.getLeftY(), -hid.getLeftX()))
-            )
-        )
-
-        
-        Trigger(lambda: self._driver_controller.getLeftTriggerAxis() > 0.75).onTrue(
-            self.drivetrain.runOnce(lambda: self._driver_assist.with_target_pose(self.drivetrain.get_tower_target(self.drivetrain.TowerSide.LEFT)))
-        ).whileTrue(
-            self.drivetrain.apply_request(
-                lambda: self._driver_assist
-                .with_velocity_x(-hid.getLeftY() * self._max_speed)
-                .with_velocity_y(-hid.getLeftX() * self._max_speed)
-            )
-        )
-
-        Trigger(lambda: self._driver_controller.getRightTriggerAxis() > 0.75).onTrue(
-            self.drivetrain.runOnce(lambda: self._driver_assist.with_target_pose(self.drivetrain.get_tower_target(self.drivetrain.TowerSide.RIGHT)))
-        ).whileTrue(
-            self.drivetrain.apply_request(
-                lambda: self._driver_assist
-                .with_velocity_x(-hid.getLeftY() * self._max_speed)
-                .with_velocity_y(-hid.getLeftX() * self._max_speed)
             )
         )
 
