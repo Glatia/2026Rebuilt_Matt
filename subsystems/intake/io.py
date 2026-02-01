@@ -1,3 +1,5 @@
+import math
+
 from abc import ABC
 from dataclasses import dataclass, field
 from typing import Final
@@ -8,7 +10,13 @@ from phoenix6.controls import VoltageOut
 from phoenix6.hardware import TalonFX
 from phoenix6.signals import NeutralModeValue
 from pykit.autolog import autolog
-from wpimath.units import radians, radians_per_second, volts, amperes, celsius, degrees
+from wpimath.units import radians, radians_per_second, volts, amperes, celsius, degrees, rotationsToRadians
+from wpimath.controller import PIDController
+from wpimath.trajectory import TrapezoidProfile
+
+from wpilib import PWMSparkMax
+from wpilib.simulation import DCMotorSim
+from wpimath.system import plant
 
 from constants import Constants
 from util import tryUntilOk
@@ -113,16 +121,35 @@ class IntakeIOSim(IntakeIO):
 
     def __init__(self) -> None:
         """Initialize the simulation IO."""
+        self.simMotor = PWMSparkMax(1) # PLACEHOLDER
+
+        self._motorType = plant.DCMotor.krakenX60(0) # PLACEHOLDER
         self._motorPosition: float = 0.0
         self._motorVelocity: float = 0.0
         self._motorAppliedVolts: float = 0.0
+
+        self._intakeSim = DCMotorSim(self._motorType, Constants.IntakeConstants.GEAR_RATIO, 0.5) # PLACEHOLDER
+        self._closedLoop = False
+
+        self._controller = PIDController(
+            Constants.IntakeConstants.GAINS.kP,
+            Constants.IntakeConstants.GAINS.kI,
+            Constants.IntakeConstants.GAINS.kD
+        )
 
     def updateInputs(self, inputs: IntakeIO.IntakeIOInputs) -> None:
         """Update inputs with simulated state."""
         # Simulate motor behavior (simple integration)
         # In a real simulation, you'd use a physics model here
-        dt = 0.02  # 20ms periodic
-        self._motorPosition += self._motorVelocity * dt
+
+        if (self._closedLoop):
+            self._motorAppliedVolts = self._controller.calculate(self._intakeSim.getAngularPosition())
+        else:
+            self._controller.reset(self._intakeSim.getAngularPosition(), self._intakeSim.getAngularAcceleration())
+
+        self.setMotorVoltage(self._motorAppliedVolts)
+        self._intakeSim.setInputVoltage(math.max(-12.0, min(self._motorAppliedVolts(12.0))))
+    
 
         # Update inputs
         inputs.motorConnected = True
@@ -132,6 +159,13 @@ class IntakeIOSim(IntakeIO):
         inputs.motorCurrent = abs(self._motorAppliedVolts / 12.0) * 40.0  # Rough current estimate
         inputs.motorTemperature = 25.0  # Room temperature
 
+    def setOpenLoop(self, output):
+        self._closedLoop = False
+        self._motorAppliedVolts = output
+    
+    def setPosition(self, position):
+        self._closedLoop = True
+        self._controller.setSetpoint(rotationsToRadians(position))
 
     def setMotorVoltage(self, voltage: volts) -> None:
         """Set the motor output voltage (simulated)."""
