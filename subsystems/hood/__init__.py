@@ -66,9 +66,10 @@ class HoodSubsystem(Subsystem):
 
         self.update_angle()
 
-        if self.alliance != DriverStation.getAlliance():
-            self.hub_pose = FlippingUtil.flipFieldPose(self.hub_pose)
-            self.alliance = DriverStation.getAlliance()
+        self.hub_pose = Constants.FieldConstants.HUB_POSE if not (
+            AutoBuilder.shouldFlip()) else FlippingUtil.flipFieldPose(
+            Constants.FieldConstants.HUB_POSE)
+
 
     def get_component_pose(self) -> Pose3d:
         """For advantage scope modelling (placeholder)."""
