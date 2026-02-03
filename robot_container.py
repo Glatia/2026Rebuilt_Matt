@@ -25,7 +25,8 @@ from subsystems.intake import IntakeSubsystem
 from subsystems.superstructure import Superstructure
 from subsystems.swerve import SwerveSubsystem
 from subsystems.vision import VisionSubsystem
-from subsystems.turret import TurretSubsystem, TurretIO
+from subsystems.turret import TurretSubsystem
+from subsystems.turret.io import TurretIOTalonFX, TurretIOSim
 
 
 class RobotContainer:
@@ -95,7 +96,7 @@ class RobotContainer:
                     Constants.VisionConstants.FRONT,
                     Constants.VisionConstants.LAUNCHER,
                 )
-                self.turret = TurretSubsystem(TurretIO.TurretIOSim(), lambda: self.drivetrain.get_state().pose)
+                self.turret = TurretSubsystem(TurretIOSim(), lambda: self.drivetrain.get_state().pose)
 
                 # Create climber only if it exists on this robot
                 if has_subsystem("climber"):

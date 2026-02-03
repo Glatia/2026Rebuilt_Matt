@@ -148,10 +148,10 @@ class TurretIOSim(TurretIO):
         self.turretSim.update(dt)
 
         inputs.motorConnected = True
-        inputs.motorPosition = self._motorPosition
-        inputs.motorVelocity = self._motorVelocity
+        inputs.motorPosition = self.turretSim.getAngularPosition()
+        inputs.motorVelocity = self.turretSim.getAngularAcceleration()
         inputs.motorAppliedVolts = self._motorAppliedVolts
-        inputs.motorCurrent = abs(self._motorAppliedVolts / 12.0) * 40.0  # Rough current estimate
+        inputs.motorCurrent = abs(self.turretSim.getCurrentDraw())
         inputs.motorTemperature = 25.0  # Room temperature
 
 
@@ -161,7 +161,7 @@ class TurretIOSim(TurretIO):
 
     def setPosition(self, position):
         self.closed_loop = True
-        self.controller.setSetpoint(rotationsToRadians(position))
+        self.controller.getSetpoint(rotationsToRadians(position))
 
 
         """

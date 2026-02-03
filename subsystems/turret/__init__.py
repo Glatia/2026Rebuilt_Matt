@@ -10,14 +10,14 @@ from phoenix6.signals import NeutralModeValue, ForwardLimitValue, ForwardLimitSo
 from pykit.autolog import autologgable_output
 from pykit.logger import Logger
 from wpilib import Alert
-from typing import Final
+from typing import Final, Callable
 from constants import Constants
 from subsystems import StateSubsystem
 from subsystems.turret.io import TurretIO
 from math import *
 from wpimath.geometry import Pose2d
+from wpimath.controller import PIDController
 from wpilib import DriverStation
-from robot_state import RobotState
 
 
 
@@ -30,7 +30,7 @@ TO-DO:
 """
 
 # Using intake-subsystem.py as a reference
-class TurretSubsytem(PIDSubsystem):
+class TurretSubsystem(PIDSubsystem):
     """
     Responsible for aiming horizontally with the turret and vertically with the variable hood.
     """
@@ -44,8 +44,13 @@ class TurretSubsytem(PIDSubsystem):
                      .with_current_limits(CurrentLimitsConfigs().with_supply_current_limit_enable(True).with_supply_current_limit(Constants.TurretConstants.SUPPLY_CURRENT))
                      )
     
-    def __init__(self, io: TurretIO, robot_pose_supplier: callable[[], Pose2d]):
-        super.__init__("Turret") # Change PID controller and Initial position if needed
+    def __init__(self, io: TurretIO, robot_pose_supplier: Callable[[], Pose2d]) -> None:
+        self.controller = PIDController(
+            Constants.TurretConstants.GAINS.k_p,
+            Constants.TurretConstants.GAINS.k_i,
+            Constants.TurretConstants.GAINS.k_d,
+            ) 
+        super().__init__(self.controller) # Change PID controller and Initial position if needed
 
         self._turret_motor = TalonFX(Constants.CanIDs.TURRET_TALON)
 
