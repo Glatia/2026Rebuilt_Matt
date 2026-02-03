@@ -9,6 +9,7 @@ from urllib.parse import urlparse, ParseResult
 
 from ntcore import NetworkTable, NetworkTableEntry, NetworkTableInstance, DoubleArrayEntry
 from wpimath import units
+from wpinet import PortForwarder
 from wpimath.geometry import (
 	Pose2d,
 	Pose3d,

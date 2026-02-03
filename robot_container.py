@@ -4,7 +4,7 @@ from typing import Optional
 import commands2
 import commands2.button
 from commands2 import cmd, InstantCommand
-from commands2.button import CommandXboxController
+from commands2.button import CommandXboxController, Trigger
 from pathplannerlib.auto import NamedCommands, PathPlannerAuto, AutoBuilder
 from pathplannerlib.util import FlippingUtil
 from phoenix6 import swerve
@@ -58,7 +58,6 @@ class RobotContainer:
                     self.vision = VisionSubsystem(
                         self.drivetrain,
                         Constants.VisionConstants.FRONT,
-                        Constants.VisionConstants.LAUNCHER,
                     )
 
                 # Create climber only if it exists on this robot
@@ -91,7 +90,6 @@ class RobotContainer:
                 self.vision = VisionSubsystem(
                     self.drivetrain,
                     Constants.VisionConstants.FRONT,
-                    Constants.VisionConstants.LAUNCHER,
                 )
 
                 # Create climber only if it exists on this robot
@@ -190,20 +188,20 @@ class RobotContainer:
 
         if self.intake is not None:
             self._driver_controller.rightBumper().whileTrue(
-                self.intake.set_desired_state_command(self.intake.SubsystemState.INTAKE)
-            ).onFalse(
-                self.intake.set_desired_state_command(self.intake.SubsystemState.STOP)
-            )
-            self._driver_controller.leftBumper().whileTrue(
                 self.intake.set_desired_state_command(self.intake.SubsystemState.OUTPUT)
             ).onFalse(
+                self.intake.set_desired_state_command(self.intake.SubsystemState.INTAKE)
+            )
+            self._driver_controller.b().whileTrue(
                 self.intake.set_desired_state_command(self.intake.SubsystemState.STOP)
+            ).onFalse(
+                self.intake.set_desired_state_command(self.intake.SubsystemState.INTAKE)
             )
         else:
             print("Intake subsystem not available on this robot, unable to bind intake buttons")
 
         self._driver_controller.a().whileTrue(self.drivetrain.apply_request(lambda: self._brake))
-        self._driver_controller.b().whileTrue(
+        self._driver_controller.x().whileTrue(
             self.drivetrain.apply_request(
                 lambda: self._point.with_module_direction(Rotation2d(-hid.getLeftY(), -hid.getLeftX()))
             )
@@ -216,76 +214,16 @@ class RobotContainer:
             self._function_controller.x(): self.superstructure.Goal.PASSDEPOT,
             self._function_controller.b(): self.superstructure.Goal.PASSOUTPOST,
             self._function_controller.a(): self.superstructure.Goal.DEFAULT,
-            self._function_controller.leftBumper(): self.superstructure.Goal.CLIMBREADY,
-            self._function_controller.rightBumper(): self.superstructure.Goal.CLIMB,
+            self._function_controller.povUp(): self.superstructure.Goal.CLIMBREADY,
+            self._function_controller.povDown(): self.superstructure.Goal.CLIMB,
         }
 
-        """ 
-        Leaving last year's goal bindings in for reference
-
-        for button, goal in goal_bindings.items():
-            if goal is self.superstructure.Goal.L3_ALGAE or goal is self.superstructure.Goal.NET or goal is self.superstructure.Goal.L2_ALGAE or goal is self.superstructure.Goal.PROCESSOR:
-                (button.whileTrue(
-                    self.superstructure.set_goal_command(goal)
-                    .alongWith(self.intake.set_desired_state_command(self.intake.SubsystemState.ALGAE_INTAKE)))
-                    .onFalse(self.intake.set_desired_state_command(self.intake.SubsystemState.ALGAE_HOLD)))
-            else:
-                button.onTrue(self.superstructure.set_goal_command(goal))
-
-        self._function_controller.leftBumper().onTrue(
-            cmd.parallel(
-                self.superstructure.set_goal_command(self.superstructure.Goal.FUNNEL),
-                self.intake.set_desired_state_command(self.intake.SubsystemState.FUNNEL_INTAKE),
-            )
-        ).onFalse(
-            cmd.parallel(
-                self.superstructure.set_goal_command(self.superstructure.Goal.DEFAULT),
-                self.intake.set_desired_state_command(self.intake.SubsystemState.STOP)
-            )
+        Trigger(lambda: self._function_controller.getLeftTriggerAxis() > 0.75).onTrue(
+            self.vision.set_desired_state(self.vision.SubsystemState.NO_ESTIMATES)
+        ).whileTrue(
+            #self.hood.apply_request(func_hid.getRightY() * self._max_speed)
+            print("Left Trigger")
         )
-
-        (self._function_controller.leftBumper() & self._function_controller.back()).whileTrue(
-            cmd.parallel(
-                self.superstructure.set_goal_command(self.superstructure.Goal.FLOOR),
-                self.intake.set_desired_state_command(self.intake.SubsystemState.CORAL_INTAKE),
-            )
-        ).onFalse(
-            cmd.parallel(
-                self.superstructure.set_goal_command(self.superstructure.Goal.DEFAULT),
-                self.intake.set_desired_state_command(self.intake.SubsystemState.STOP),
-            )
-        )
-
-        (self._function_controller.povLeft() | self._function_controller.povUpLeft() | self._function_controller.povDownLeft()).onTrue(
-            cmd.parallel(
-                self.climber.set_desired_state_command(self.climber.SubsystemState.CLIMB_OUT),
-                self.superstructure.set_goal_command(self.superstructure.Goal.CLIMB)
-            )
-        ).onFalse(self.climber.set_desired_state_command(self.climber.SubsystemState.STOP))
-
-        (self._function_controller.povRight() | self._function_controller.povUpRight() | self._function_controller.povDownRight()).onTrue(
-            cmd.parallel(
-                self.climber.set_desired_state_command(self.climber.SubsystemState.CLIMB_IN),
-                self.superstructure.set_goal_command(self.superstructure.Goal.CLIMB)
-            )
-        ).onFalse(self.climber.set_desired_state_command(self.climber.SubsystemState.STOP))
-
-        self._function_controller.povUp().onTrue(
-            self.superstructure.set_goal_command(self.superstructure.Goal.FINISH)
-        )
-
-        self._function_controller.rightBumper().whileTrue(
-            self.intake.set_desired_state_command(self.intake.SubsystemState.OUTPUT)
-        ).onFalse(
-            self.intake.set_desired_state_command(self.intake.SubsystemState.STOP)
-        )
-
-        (self._function_controller.rightBumper() & self._function_controller.start()).onTrue(
-            self.intake.set_desired_state_command(self.intake.SubsystemState.L1_OUTPUT)
-        ).onFalse(
-            self.intake.set_desired_state_command(self.intake.SubsystemState.STOP)
-        )
-        """
 
     def get_autonomous_command(self) -> commands2.Command:
         return self._auto_chooser.getSelected()

@@ -18,9 +18,8 @@ class VisionSubsystem(StateSubsystem):
     This is primarily used for combining MegaTag pose estimates and ensuring no conflicts between Limelights.
 
     Our vision system consists of:
-    - 1 Limelight 4 (center back of the elevator crossbeam)
-    - 1 Limelight 4 (under the pivot, 20-degree inclination)
-    - 2 Limelight 3As (front swerve covers, 15-degree outward incline)
+
+    - 1 Limelight 3A (front, 15-degree outward incline)
 
     We use the starting position in auto to determine our robot heading to calibrate our cameras.
     """

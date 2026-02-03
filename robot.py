@@ -1,6 +1,5 @@
 import wpilib
 from commands2 import CommandScheduler
-from cscore import CameraServer
 from ntcore import NetworkTableInstance
 from phoenix6 import SignalLogger
 from pykit.loggedrobot import LoggedRobot
@@ -16,8 +15,7 @@ from lib import elasticlib
 from lib.elasticlib import Notification, NotificationLevel
 from robot_container import RobotContainer
 
-
-class Oasis(LoggedRobot):
+class Dwayne(LoggedRobot):
 
     def __init__(self, period = 0.02) -> None:
         super().__init__()
@@ -70,15 +68,6 @@ class Oasis(LoggedRobot):
         SignalLogger.enable_auto_logging(False)
         wpilib.LiveWindow.disableAllTelemetry()
 
-        CameraServer.startAutomaticCapture()
-        CameraServer.startAutomaticCapture()
-
-        #WebServer.getInstance().start(5800, self.get_deploy_directory())
-        # port_forwarder = PortForwarder.getInstance()
-        # for i in range(10): # Forward limelight ports for use when tethered at events.
-        #     port_forwarder.add(5800 + i, f"{Constants.VisionConstants.FRONT_CENTER}.local", 5800 + i)
-        #     port_forwarder.add(5800 + i + 10, f"{Constants.VisionConstants.BACK_CENTER}.local", 5800 + i)
-
         DataLogManager.log("Robot initialized")
 
         dashboard_nt = NetworkTableInstance.getDefault().getTable("Elastic")
@@ -128,10 +117,12 @@ class Oasis(LoggedRobot):
         SignalLogger.start()
 
     def disabledInit(self):
-        self.container.vision.set_throttle(150)
+        if self.container.vision is not None:
+            self.container.vision.set_throttle(150)
 
     def disabledExit(self):
-        self.container.vision.set_throttle(0)
+        if self.container.vision is not None:
+            self.container.vision.set_throttle(0)
 
     def testExit(self):
         pass
