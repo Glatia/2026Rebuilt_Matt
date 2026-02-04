@@ -56,6 +56,7 @@ class Constants:
         GAINS = None
         SUPPLY_CURRENT = None
         INSIDE_FRAME_ANGLE = None
+        MOMENT_OF_INERTIA = None
 
     class LauncherConstants:
         GEAR_RATIO = None

@@ -10,13 +10,16 @@ from phoenix6.controls import VoltageOut
 from phoenix6.hardware import TalonFX
 from phoenix6.signals import NeutralModeValue
 from pykit.autolog import autolog
-from wpimath.units import radians, radians_per_second, volts, amperes, celsius, degrees, rotationsToRadians
-from wpimath.controller import PIDController
-from wpimath.trajectory import TrapezoidProfile
+from wpimath.units import radians, radians_per_second, volts, amperes, celsius, rotationsToRadians
+from phoenix6.configs import CANrangeConfiguration, TalonFXConfiguration, MotorOutputConfigs, FeedbackConfigs, HardwareLimitSwitchConfigs, ProximityParamsConfigs, CurrentLimitsConfigs
 
-from wpilib import PWMSparkMax
+from phoenix6.hardware import TalonFX
+from phoenix6.signals import NeutralModeValue
+
 from wpilib.simulation import DCMotorSim
-from wpimath.system import plant
+from wpimath.system.plant import DCMotor, LinearSystemId
+from wpimath.trajectory import TrapezoidProfile
+from wpimath.controller import ProfiledPIDController
 
 from constants import Constants
 from util import tryUntilOk
@@ -39,8 +42,7 @@ class IntakeIO(ABC):
         motorAppliedVolts: volts = 0.0
         motorCurrent: amperes = 0.0
         motorTemperature: celsius = 0.0
-
-
+    
     def updateInputs(self, inputs: IntakeIOInputs) -> None:
         """Update the inputs with current hardware/simulation state."""
         pass
@@ -63,8 +65,16 @@ class IntakeIOTalonFX(IntakeIO):
         :param motor_config: TalonFX configuration to apply
         """
         self._motor: Final[TalonFX] = TalonFX(motor_id, "*")
+
+        _motor_config = (TalonFXConfiguration()
+                        .with_slot0(Constants.IntakeConstants.GAINS)
+                        .with_motor_output(MotorOutputConfigs().with_neutral_mode(NeutralModeValue.BRAKE))
+                        .with_feedback(FeedbackConfigs().with_sensor_to_mechanism_ratio(Constants.IntakeConstants.GEAR_RATIO))
+                        .with_current_limits(CurrentLimitsConfigs().with_supply_current_limit_enable(True).with_supply_current_limit(Constants.IntakeConstants.SUPPLY_CURRENT))
+                        )
+
         # Apply motor configuration
-        tryUntilOk(5, lambda: self._motor.configurator.apply(motor_config, 0.25))
+        tryUntilOk(5, lambda: self._motor.configurator.apply(_motor_config, 0.25))
         tryUntilOk(5, lambda: self._motor.set_position(0, 0.25))
 
         # Create status signals for motor
@@ -121,55 +131,57 @@ class IntakeIOSim(IntakeIO):
 
     def __init__(self) -> None:
         """Initialize the simulation IO."""
-        self.simMotor = PWMSparkMax(1) # PLACEHOLDER
-
-        self._motorType = plant.DCMotor.krakenX60(0) # PLACEHOLDER
         self._motorPosition: float = 0.0
         self._motorVelocity: float = 0.0
         self._motorAppliedVolts: float = 0.0
 
-        self._intakeSim = DCMotorSim(self._motorType, Constants.IntakeConstants.GEAR_RATIO, 0.5) # PLACEHOLDER
+        self._motorType = DCMotor.krakenX60(1)
+        linearSystem = LinearSystemId.DCMotorSystem(
+            self._motorType,
+            Constants.IntakeConstants.MOMENT_OF_INERTIA,
+            Constants.IntakeConstants.GEAR_RATIO
+        )
+
+        self._simMotor = DCMotorSim(linearSystem, self._motorType, [0, 0])
+
         self._closedLoop = False
 
-        self._controller = PIDController(
-            Constants.IntakeConstants.GAINS.kP,
-            Constants.IntakeConstants.GAINS.kI,
-            Constants.IntakeConstants.GAINS.kD
-        )
+        self._controller = ProfiledPIDController(Constants.IntakeConstants.GAINS.k_p,
+                                                Constants.IntakeConstants.GAINS.k_i,
+                                                Constants.IntakeConstants.GAINS.k_d,
+                                                TrapezoidProfile.Constraints(12.0, 24.0)
+                                                )
 
     def updateInputs(self, inputs: IntakeIO.IntakeIOInputs) -> None:
         """Update inputs with simulated state."""
-        # Simulate motor behavior (simple integration)
-        # In a real simulation, you'd use a physics model here
 
-        if (self._closedLoop):
-            self._motorAppliedVolts = self._controller.calculate(self._intakeSim.getAngularPosition())
+        self._simMotor.update(0.02)
+        if self._closedLoop:
+            
+            self._motorAppliedVolts = self._controller.calculate(
+                self._simMotor.getAngularVelocity()
+            )
         else:
-            self._controller.reset(self._intakeSim.getAngularPosition(), self._intakeSim.getAngularAcceleration())
+            self._controller.reset(
+                self._simMotor.getAngularPosition(),
+                self._simMotor.getAngularVelocity()
+            )
 
-        self.setMotorVoltage(self._motorAppliedVolts)
-        self._intakeSim.setInputVoltage(math.max(-12.0, min(self._motorAppliedVolts(12.0))))
-    
-
+        self._simMotor.setInputVoltage(max(-12.0, min(12.0, self._motorAppliedVolts)))
+        
         # Update inputs
         inputs.motorConnected = True
-        inputs.motorPosition = self._motorPosition
-        inputs.motorVelocity = self._motorVelocity
+        inputs.motorPosition = self._simMotor.getAngularPosition()
+        inputs.motorVelocity = self._simMotor.getAngularVelocity()
         inputs.motorAppliedVolts = self._motorAppliedVolts
-        inputs.motorCurrent = abs(self._motorAppliedVolts / 12.0) * 40.0  # Rough current estimate
+        inputs.motorCurrent = self._simMotor.getCurrentDraw()
         inputs.motorTemperature = 25.0  # Room temperature
 
-    def setOpenLoop(self, output):
-        self._closedLoop = False
-        self._motorAppliedVolts = output
-    
-    def setPosition(self, position):
-        self._closedLoop = True
-        self._controller.setSetpoint(rotationsToRadians(position))
 
     def setMotorVoltage(self, voltage: volts) -> None:
         """Set the motor output voltage (simulated)."""
-        self._motorAppliedVolts = max(-12.0, min(12.0, voltage))
-        # Simple velocity model: voltage -> velocity (with some damping)
-        self._motorVelocity = self._motorAppliedVolts * 10.0  # Adjust multiplier as needed
 
+        if self._closedLoop:
+            self._controller.setGoal(voltage)
+        else:
+            self._motorAppliedVolts = voltage

@@ -26,18 +26,10 @@ class IntakeSubsystem(StateSubsystem):
         INTAKE = auto()
         OUTPUT = auto()
 
-    _canrange_config = (CANrangeConfiguration().with_proximity_params(ProximityParamsConfigs().with_proximity_threshold(0.1)))
-
-    _motor_config = (TalonFXConfiguration()
-                     .with_slot0(Constants.IntakeConstants.GAINS)
-                     .with_motor_output(MotorOutputConfigs().with_neutral_mode(NeutralModeValue.BRAKE))
-                     .with_feedback(FeedbackConfigs().with_sensor_to_mechanism_ratio(Constants.IntakeConstants.GEAR_RATIO))
-                     .with_current_limits(CurrentLimitsConfigs().with_supply_current_limit_enable(True).with_supply_current_limit(Constants.IntakeConstants.SUPPLY_CURRENT))
-                     )
-
-
-    _state_configs: dict[SubsystemState, tuple[int, bool]] = {
-        SubsystemState.STOP: (0, False),
+    _state_configs: dict[SubsystemState, float] = {
+        SubsystemState.STOP: 0,
+        SubsystemState.INTAKE: 12.0,
+        SubsystemState.OUTPUT: -12.0
     }
 
     def __init__(self, io: IntakeIO) -> None:
