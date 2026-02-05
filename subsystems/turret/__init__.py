@@ -23,6 +23,7 @@ from wpilib import DriverStation
 class TurretSubsystem(Subsystem):
 
     class Goal(Enum):
+        NONE = auto()
         HUB = auto()
         DEPOT = auto()
         OUTPOST = auto()
@@ -43,7 +44,8 @@ class TurretSubsystem(Subsystem):
         self.positionRequest = PositionVoltage(0)
 
         self.independentAngle = Rotation2d(0)
-        self.goal = ""
+
+        self.goal = self.Goal.NONE
 
     def periodic(self):
 
@@ -56,9 +58,9 @@ class TurretSubsystem(Subsystem):
         # Update alerts
         self._motorDisconnectedAlert.set(not self._inputs.turret_connected)
 
-        self.currentAngle = self.robot_pose_supplier.rotation() + self.independentAngle
+        self.currentAngle = self.robot_pose_supplier().rotation() + self.independentAngle
 
-        if self.goal:
+        if self.goal != self.Goal.NONE:
             self.rotateTowardsGoal(self.goal)
         
     def getAngleToGoal(self):
@@ -66,26 +68,20 @@ class TurretSubsystem(Subsystem):
         # If the robot is in the neutral zone, have it determine what side of the zone it's on so it knows the target to aim at
         match self.goal:
             case self.Goal.HUB:
-                xdist = abs(self.robot_pose_supplier.X() - Constants.GoalLocations.BLUE_HUB.X()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier.X() - Constants.GoalLocations.RED_HUB.X())
-                ydist = abs(self.robot_pose_supplier.Y() - Constants.GoalLocations.BLUE_HUB.Y()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier.Y() - Constants.GoalLocations.RED_HUB.Y())
+                xdist = abs(self.robot_pose_supplier().X() - Constants.GoalLocations.BLUE_HUB.X()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier().X() - Constants.GoalLocations.RED_HUB.X())
+                ydist = abs(self.robot_pose_supplier().Y() - Constants.GoalLocations.BLUE_HUB.Y()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier().Y() - Constants.GoalLocations.RED_HUB.Y())
             case self.Goal.OUTPOST:
-                xdist = abs(self.robot_pose_supplier.X() - Constants.GoalLocations.BLUE_OUTPOST_PASS.X()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier.X() - Constants.GoalLocations.RED_OUTPOST_PASS.X())
-                ydist = abs(self.robot_pose_supplier.Y() - Constants.GoalLocations.BLUE_OUTPOST_PASS.Y()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier.Y() - Constants.GoalLocations.RED_OUTPOST_PASS.Y())
+                xdist = abs(self.robot_pose_supplier().X() - Constants.GoalLocations.BLUE_OUTPOST_PASS.X()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier().X() - Constants.GoalLocations.RED_OUTPOST_PASS.X())
+                ydist = abs(self.robot_pose_supplier().Y() - Constants.GoalLocations.BLUE_OUTPOST_PASS.Y()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier().Y() - Constants.GoalLocations.RED_OUTPOST_PASS.Y())
             case self.Goal.DEPOT:
-                xdist = abs(self.robot_pose_supplier.X() - Constants.GoalLocations.BLUE_DEPOT_PASS.X()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier.X() - Constants.GoalLocations.RED_DEPOT_PASS.X())
-                ydist = abs(self.robot_pose_supplier.Y() - Constants.GoalLocations.BLUE_DEPOT_PASS.Y()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier.Y() - Constants.GoalLocations.RED_DEPOT_PASS.Y())
+                xdist = abs(self.robot_pose_supplier().X() - Constants.GoalLocations.BLUE_DEPOT_PASS.X()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier().X() - Constants.GoalLocations.RED_DEPOT_PASS.X())
+                ydist = abs(self.robot_pose_supplier().Y() - Constants.GoalLocations.BLUE_DEPOT_PASS.Y()) if DriverStation.getAlliance == DriverStation.Alliance.kBlue else abs(self.robot_pose_supplier().Y() - Constants.GoalLocations.RED_DEPOT_PASS.Y())
         target_angle = atan(ydist / xdist)
         return target_angle
 
-    def rotateTowardsGoal(self, goal: str):
+    def rotateTowardsGoal(self, target: Goal):
         # This function might not work because it probably isn't periodic so it'll only set the output once and then not check if the angle is correct until it's called again (which is when the target changes)
-        match goal.lower:
-            case "hub":
-                self.goal = self.Goal.HUB
-            case "outpost":
-                self.goal = self.Goal.OUTPOST
-            case "depot":
-                self.goal = self.Goal.DEPOT
+        self.goal = target
         targetAngle = self.getAngleToGoal()
         self.positionRequest.position = radiansToRotations(targetAngle)
         self._turret_motor.set_control(self.positionRequest)

@@ -225,7 +225,8 @@ class RobotContainer:
             self._function_controller.povUp(): self.superstructure.Goal.CLIMBREADY,
             self._function_controller.povDown(): self.superstructure.Goal.CLIMB,
         }
-        self._function_controller.y().onTrue(self.turret.rotateTowardsGoal("hub"))
+        self._function_controller.y().onTrue(self.turret.runOnce(lambda: self.turret.rotateTowardsGoal(self.turret.Goal.HUB)))
+        print("turret to hub")
 
         Trigger(lambda: self._function_controller.getLeftTriggerAxis() > 0.75).onTrue(
             self.vision.set_desired_state(self.vision.SubsystemState.NO_ESTIMATES)

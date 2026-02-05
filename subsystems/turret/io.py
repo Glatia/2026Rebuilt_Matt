@@ -38,11 +38,11 @@ class TurretIO(ABC):
         turret_setpoint: radians = 0.0
 
 
-    def updateInputs(self, inputs: TurretIOInputs) -> None:
+    def update_inputs(self, inputs: TurretIOInputs) -> None:
         """Update the inputs with current hardware/simulation state."""
         pass
 
-    def setMotorVoltage(self, voltage: volts) -> None:
+    def set_position(self, rotation: Rotation2d) -> None:
         """Set the motor output voltage."""
         pass
 
@@ -107,7 +107,9 @@ class TurretIOTalonFX(TurretIO):
 
     def set_position(self, rotation: Rotation2d) -> None:
         """Set the position."""
-        self.turret_motor.set_control(self.position_request.with_position(rotation))
+        self.position_request = PositionVoltage(rotation.r)
+        self.turret_motor.set_control(self.position_request)
+
 
 
 
@@ -132,38 +134,30 @@ class TurretIOSim(TurretIO):
             Constants.TurretConstants.GAINS.k_d,
             ) 
 
-    def updateInputs(self, inputs: TurretIO.TurretIOInputs) -> None:
+    def update_inputs(self, inputs: TurretIO.TurretIOInputs) -> None:
         """Update inputs with simulated state."""
-        dt = 0.02  # 20ms periodic
 
         if self.closed_loop:
             self.appliedVolts = self.controller.calculate(self.turretSim.getAngularPosition())
         else:
             self.controller.reset()
 
-        self.setMotorVoltage(self.appliedVolts)
-        self.turretSim.update(dt)
+        self.turretSim.update(.02)
 
-        inputs.motorConnected = True
-        inputs.motorPosition = self.turretSim.getAngularPosition()
-        inputs.motorVelocity = self.turretSim.getAngularAcceleration()
-        inputs.motorAppliedVolts = self._motorAppliedVolts
-        inputs.motorCurrent = abs(self.turretSim.getCurrentDraw())
-        inputs.motorTemperature = 25.0  # Room temperature
+        inputs.turret_connected = True
+        inputs.turret_position = self.turretSim.getAngularPosition()
+        inputs.turret_velocity = self.turretSim.getAngularAcceleration()
+        inputs.turret_applied_volts = self._motorAppliedVolts
+        inputs.turret_current = abs(self.turretSim.getCurrentDraw())
+        inputs.turret_temperature = 25.0  # Room temperature
 
 
-    def setOpenLoop(self, output):
+    def set_open_loop(self, output):
         self.closed_loop = False
         self.appliedVolts = output
 
-    def setPosition(self, position):
+    def set_position(self, position: Rotation2d):
         self.closed_loop = True
-        self.controller.setSetpoint(rotationsToRadians(position))
-
-    def setMotorVoltage(self, voltage: volts) -> None:
-        """Set the motor output voltage (simulated)."""
-        self._motorAppliedVolts = max(-12.0, min(12.0, voltage))
-        # Simple velocity model: voltage -> velocity (with some damping)
-        self._motorVelocity = self._motorAppliedVolts * 10.0  # Adjust multiplier as needed
+        self.controller.setSetpoint(position.radians())
 
     
