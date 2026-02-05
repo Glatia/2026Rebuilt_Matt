@@ -275,7 +275,7 @@ class SwerveSubsystem(Subsystem, swerve.SwerveDrivetrain):
         Logger.recordOutput("Drive/GeneratorActive", self._generator_active)
 
         # Setpoint generator
-        self._generator_master_switch = True
+        self._generator_master_switch = False
         self._previous_setpoint = SwerveSetpoint(
             self._cached_speeds,
             self._cached_module_states,

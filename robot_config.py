@@ -50,7 +50,7 @@ def detect_robot() -> Robot:
             # Add other possible MAC addresses for Larry if it has multiple interfaces
         ]
         COMP_MAC_ADDRESSES = [
-            "00:80:2f:YY:YY:YY",  # Replace with Comp's actual MAC
+            "00:08:f2:83:d8:07",  # Replace with Comp's actual MAC
             # Add other possible MAC addresses for Comp if it has multiple interfaces
         ]
         
@@ -58,7 +58,7 @@ def detect_robot() -> Robot:
             print("Mac address is for Larry")
             return Robot.LARRY
         if mac_address in COMP_MAC_ADDRESSES:
-            print("Mac address is for Comp robot.")
+            print("Mac address is for Dwayne.")
             return Robot.COMP
     except Exception:
         pass
@@ -110,8 +110,8 @@ def has_subsystem(subsystem_name: str) -> bool:
     COMP_SUBSYSTEMS = {
         "drivetrain",  # Always present
         "vision",      # Always present
-        "climber",     # Competition robot has climber
-        "intake",      # Competition robot has intake
+        #"climber",     # Competition robot has climber
+        #"intake",      # Competition robot has intake
         # Add other Comp subsystems as needed
     }
     
