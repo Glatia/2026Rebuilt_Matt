@@ -33,13 +33,14 @@ class Constants:
     # Can ids are to be set in the same order as they are wired in the CAN bus
     class CanIDs:
         #All motors are Kraken X60 unless otherwise specified
-        CLIMB_TALON = 10
-        INTAKE_TALON = 11
-        KICKER_TALON = 12
-        TURRET_TALON = 13
+        INTAKE_TALON = 10
+        CLIMB_TALON = 11
+        TURRET_TALON = 12
+        FEEDER_TALON = 13
         HOOD_TALON = 14 # Kraken X44
-        LAUNCHER_LEFT_TALON = 15 # Kraken X44
-        LAUNCHER_RIGHT_TALON = 16 # Kraken X44
+        LAUNCHER_TOP_TALON = 15 # Kraken X44
+        LAUNCHER_LOW_TALON = 16 # Kraken X44
+        
         TURRET_CANCODER = 17
         HOOD_CANCODER = 18
 
