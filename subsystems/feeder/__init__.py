@@ -33,7 +33,7 @@ class FeederSubsystem(StateSubsystem):
 
         self._io: Final[FeederIO] = io
         self._inputs = FeederIO.FeederIOInputs()
-
+        
         # Alert for disconnected motor
         self._motorDisconnectedAlert = Alert("Feeder motor is disconnected.", Alert.AlertType.kError)
 
@@ -41,14 +41,12 @@ class FeederSubsystem(StateSubsystem):
         """Called periodically to update inputs and log data."""
         # Update inputs from hardware/simulation
         self._io.updateInputs(self._inputs)
-
+        
         # Log inputs to PyKit
         Logger.processInputs("Feeder", self._inputs)
-
+        
         # Update alerts
         self._motorDisconnectedAlert.set(not self._inputs.motorConnected)
-
-        super().periodic()
 
     def set_desired_state(self, desired_state: SubsystemState) -> None:
         if not super().set_desired_state(desired_state):
@@ -56,9 +54,11 @@ class FeederSubsystem(StateSubsystem):
 
         # Get motor rps for this state
         motor_rps = self._state_configs.get(
-            desired_state,
+            desired_state, 
             0.0
         )
-
+        
         # Set motor velocity through IO layer
         self._io.setMotorRPS(motor_rps)
+
+    

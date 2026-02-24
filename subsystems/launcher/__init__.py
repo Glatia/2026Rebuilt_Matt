@@ -18,7 +18,7 @@ GeneralConstants = Constants.GeneralConstants
 
 def velocityToWheelRPS(velocity: float) -> float:
     """Converts m/s to rotations per second for the flywheel, accounting for inertia."""
-
+        
     effective_rotational_inertia = 7 * GeneralConstants.GAME_PIECE_WEIGHT * (LauncherConstants.FLYWHEEL_RADIUS ** 2)
 
     speed_transfer_percentage = (
@@ -28,7 +28,7 @@ def velocityToWheelRPS(velocity: float) -> float:
     )
 
     rpm = (velocity) / (LauncherConstants.FLYWHEEL_RADIUS * speed_transfer_percentage)
-
+        
     return rpm/(2*pi)
 
 class LauncherSubsystem(StateSubsystem):
@@ -40,7 +40,7 @@ class LauncherSubsystem(StateSubsystem):
         IDLE = auto()
         SCORE = auto()
         PASS = auto()
-
+        
     _state_configs: dict[SubsystemState, float] = {
         # Meters per second
         SubsystemState.IDLE: 0, #velocityToWheelRPS(5.0),
@@ -57,7 +57,7 @@ class LauncherSubsystem(StateSubsystem):
         self._desired_projectile_velocity = 0.0
         self._desired_motorRPS = 0.0
         self.distance = 1.0
-
+        
         self._motorDisconnectedAlert = Alert("Launcher motor is disconnected.", Alert.AlertType.kError)
 
         self.set_desired_state(self.SubsystemState.IDLE)
@@ -108,14 +108,12 @@ class LauncherSubsystem(StateSubsystem):
         # Update alerts
         self._motorDisconnectedAlert.set(not self._inputs.motorConnected)
 
-        super().periodic()
-
     def set_desired_state(self, desired_state: SubsystemState) -> None:
         if not super().set_desired_state(desired_state):
             return
 
         projectile_velocity = self._state_configs.get(
-            desired_state,
+            desired_state, 
             0.0
         )#self.get_aim_velocity(desired_state)
 
@@ -143,3 +141,4 @@ class LauncherSubsystem(StateSubsystem):
 
     def find_position(self) -> float:
         return self._robot_pose_supplier().X
+

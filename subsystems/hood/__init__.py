@@ -56,16 +56,16 @@ class HoodSubsystem(StateSubsystem):
     def interpolate(self) -> None:
         """Updates hood angle."""
         if self.distance <= Constants.HoodConstants.MAX_DISTANCE_FOR_SLOW_LAUNCH:
-            self.target = 0.0000840628 * (self.distance ** 6.40933)
+            self.target = 0.0000840628 * (self.distance ** 6.40933) 
         else:
-            self.target = 0.0000139591 * (self.distance ** 5.1281)
+            self.target = 0.0000139591 * (self.distance ** 5.1281) 
 
     def periodic(self) -> None:
         """Runs stuff periodically (every 20 ms)."""
         self.alliance = DriverStation.getAlliance()
         self.hub_pose = Constants.FieldConstants.HUB_POSE if not (
             AutoBuilder.shouldFlip()) else FlippingUtil.flipFieldPose(Constants.FieldConstants.HUB_POSE)
-
+        
         self.io.update_inputs(self.inputs)
 
         if self._auto_aim:
@@ -81,10 +81,10 @@ class HoodSubsystem(StateSubsystem):
         Logger.recordOutput("Hood/Distance", self.distance)
         Logger.recordOutput("Hood/Target", self.target)
 
-        super().periodic()
-
     def set_desired_state(self, desired_state: SubsystemState) -> None:
-        super().set_desired_state(desired_state)
+        """set state"""
+        if not super().set_desired_state(desired_state):
+            return
 
         self._auto_aim, hood_pos = self._state_configs.get(desired_state, 0.0)
         self.io.set_position(hood_pos)

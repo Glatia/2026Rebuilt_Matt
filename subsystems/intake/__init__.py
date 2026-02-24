@@ -28,6 +28,7 @@ class IntakeSubsystem(StateSubsystem):
 
         self._io: Final[IntakeIO] = io
         self._inputs = IntakeIO.IntakeIOInputs()
+        
         # Alert for disconnected motor
         self._motorDisconnectedAlert = Alert("Intake motor is disconnected.", Alert.AlertType.kError)
 
@@ -35,14 +36,12 @@ class IntakeSubsystem(StateSubsystem):
         """Called periodically to update inputs and log data."""
         # Update inputs from hardware/simulation
         self._io.updateInputs(self._inputs)
-
+        
         # Log inputs to PyKit
         Logger.processInputs("Intake", self._inputs)
-
+        
         # Update alerts
         self._motorDisconnectedAlert.set(not self._inputs.motorConnected)
-
-        super().periodic()
 
     def set_desired_state(self, desired_state: SubsystemState) -> None:
         if not super().set_desired_state(desired_state):
@@ -50,9 +49,11 @@ class IntakeSubsystem(StateSubsystem):
 
         # Get motor voltage for this state
         motor_RPS = self._state_configs.get(
-            desired_state,
+            desired_state, 
             0.0
         )
-
+        
         # Set motor RPS through IO layer
         self._io.setMotorRPS(motor_RPS)
+
+    

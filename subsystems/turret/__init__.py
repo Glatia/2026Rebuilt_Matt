@@ -63,9 +63,7 @@ class TurretSubsystem(StateSubsystem):
 
         if self.get_current_state() != self.SubsystemState.MANUAL:
             self.rotate_to_goal(self.get_current_state())
-
-        super().periodic()
-
+        
     def get_radians_to_goal(self) -> float:
         """
         Field-frame angle (radians) from robot to goal. 0 = +X (red alliance wall), CCW positive.

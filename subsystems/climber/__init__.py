@@ -53,8 +53,6 @@ class ClimberSubsystem(StateSubsystem):
         # Update alerts
         self._motor_disconnected_alert.set(not self._inputs.climber_connected)
 
-        super().periodic()
-
     def set_desired_state(self, desired_state: SubsystemState) -> None:
         """
         Set the desired climber state.
