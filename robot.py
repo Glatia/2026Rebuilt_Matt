@@ -100,7 +100,7 @@ class Dwayne(LoggedRobot):
             self.container._field.setRobotPose(self.container.drivetrain.get_state().pose)
 
     def _simulationPeriodic(self) -> None:
-        pass
+        self.container.fuel_sim.update_sim()
 
     def autonomousInit(self) -> None:
         selected_auto = self.container.get_autonomous_command()
@@ -109,14 +109,14 @@ class Dwayne(LoggedRobot):
             selected_auto.schedule()
 
         elasticlib.select_tab("Autonomous")
-            
+
     def autonomousPeriodic(self) -> None:
         pass
-    
+
     def autonomousExit(self) -> None:
         DataLogManager.log("Autonomous period ended")
         elasticlib.select_tab("Teleop")
-            
+
     def teleopInit(self) -> None:
         DataLogManager.log("Teleoperated period started")
         self.container.get_autonomous_command().cancel()
@@ -148,7 +148,7 @@ class Dwayne(LoggedRobot):
 
     def testExit(self):
         pass
-    
+
     def disabledPeriodic(self) -> None:
         pass
 

@@ -11,13 +11,15 @@ from phoenix6 import swerve
 from phoenix6.configs import TalonFXConfiguration
 from phoenix6.configs.config_groups import NeutralModeValue, MotorOutputConfigs, FeedbackConfigs, InvertedValue
 from pykit.networktables.loggeddashboardchooser import LoggedDashboardChooser
-from wpilib import Field2d, SmartDashboard, XboxController, getDeployDirectory
+from wpilib import Field2d, SmartDashboard, XboxController, getDeployDirectory, RobotBase
 from wpimath.geometry import Rotation2d
-from wpimath.units import rotationsToRadians
+from wpimath.kinematics import ChassisSpeeds
+from wpimath.units import rotationsToRadians, inchesToMeters
 
 from constants import Constants
 from generated.larry.tuner_constants import TunerConstants as LarryTunerConstants
 from generated.tuner_constants import TunerConstants
+from lib.fuel_sim import FuelSim
 from robot_config import currentRobot, has_subsystem, Robot  # Robot detection (Larry vs Comp)
 from subsystems.climber import ClimberSubsystem
 from subsystems.climber.io import ClimberIOTalonFX, ClimberIOSim
@@ -194,7 +196,24 @@ class RobotContainer:
                 else:
                     print("straight out the suburbs") # hood is not present
 
-                
+        # Fuel simulation (for simulation testing)
+        def get_field_speeds():
+            state = self.drivetrain.get_state()
+            rotation = state.pose.rotation()
+            speeds = state.speeds
+            return ChassisSpeeds.fromRobotRelativeSpeeds(speeds.vx, speeds.vy, speeds.omega, rotation)
+        self.fuel_sim = FuelSim()
+        self.fuel_sim.spawn_starting_fuel()
+        self.fuel_sim.register_robot(
+            inchesToMeters(27),
+            inchesToMeters(27),
+            inchesToMeters(5),
+            lambda: self.drivetrain.get_state().pose,
+            lambda: get_field_speeds()
+        )
+        self.fuel_sim.enable_air_resistance()
+        if RobotBase.isSimulation():
+            self.fuel_sim.start()
 
         self.superstructure = Superstructure(
             self.intake, self.feeder, self.launcher, self.hood
@@ -319,7 +338,7 @@ class RobotContainer:
             Trigger(lambda: self._function_controller.getLeftTriggerAxis() > 0.75).whileTrue(InstantCommand(lambda: self.launcher.set_desired_state(self.launcher.SubsystemState.SCORE))).onFalse(InstantCommand(lambda: self.launcher.set_desired_state(self.launcher.SubsystemState.IDLE)))
         else:
             print("Launcher subsystem not available on this robot, unable to bind launcher buttons")
-        
+
         if self.turret is not None and self.hood is not None:
             self._function_controller.y().onTrue(
                 InstantCommand(lambda: self.turret.set_desired_state(self.turret.SubsystemState.HUB)).alongWith(
@@ -332,7 +351,7 @@ class RobotContainer:
                     InstantCommand(lambda: self.hood.set_desired_state(self.hood.SubsystemState.PASS))
                 )
             )
-            
+
             self._function_controller.b().onTrue(
                 InstantCommand(lambda: self.turret.set_desired_state(self.turret.SubsystemState.OUTPOST)).alongWith(
                     InstantCommand(lambda: self.hood.set_desired_state(self.hood.SubsystemState.PASS))
@@ -348,14 +367,14 @@ class RobotContainer:
                     InstantCommand(lambda: self.hood.set_desired_state(self.hood.SubsystemState.MANUAL))
                 )
             )
-           
+
 
             self._function_controller.back().whileTrue(
                 InstantCommand(lambda: self.turret.rotate_manually(self._function_controller.getRightX())).alongWith(
                     InstantCommand(lambda: self.hood.rotate_manually(self._function_controller.getRightY()))
                     )
             )
-           
+
         else:
             print("Turret or hood subsystem not available on this robot, unable to bind turret buttons")
 
