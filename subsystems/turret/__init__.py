@@ -5,8 +5,8 @@ from typing import Final, Callable
 from constants import Constants
 from subsystems import Subsystem
 from subsystems.turret.io import TurretIO
-from math import atan2, pi
-from wpimath.geometry import Pose2d, Rotation2d
+from math import atan2, pi, radians as deg_to_rad
+from wpimath.geometry import Pose2d, Rotation2d, Pose3d, Rotation3d
 from wpimath.units import rotationsToRadians
 from wpilib import DriverStation
 from subsystems import StateSubsystem
@@ -63,7 +63,7 @@ class TurretSubsystem(StateSubsystem):
 
         if self.get_current_state() != self.SubsystemState.MANUAL:
             self.rotate_to_goal(self.get_current_state())
-        
+
     def get_radians_to_goal(self) -> float:
         """
         Field-frame angle (radians) from robot to goal. 0 = +X (red alliance wall), CCW positive.
@@ -99,7 +99,10 @@ class TurretSubsystem(StateSubsystem):
                 return Constants.GoalLocations.BLUE_HUB  # fallback, caller should not use for MANUAL
 
     def rotate_to_goal(self, target: SubsystemState):
-        """Aim turret at goal. Commands absolute turret angle in robot frame (shortest path)."""
+        """
+        Aim turret at goal. Respects hard stop range [0, MAX_ROTATIONS] and uses
+        5° hysteresis past center before switching sides.
+        """
         self.set_desired_state(target)
         if self.get_current_state() == self.SubsystemState.MANUAL:
             return
@@ -108,25 +111,44 @@ class TurretSubsystem(StateSubsystem):
         field_angle_to_goal = self.get_radians_to_goal()
         robot_rotation = self.robot_pose_supplier().rotation().radians()
 
-        # Turret angle relative to robot forward. Turret motor is CLOCKWISE_POSITIVE, field is CCW positive,
-        # so negate so that "turn toward goal" matches physical turret direction.
+        # Turret angle relative to robot forward. Turret motor is CLOCKWISE_POSITIVE, field is CCW positive.
         desired_turret = -(field_angle_to_goal - robot_rotation)
-        # Normalize desired to [-pi, pi]
         while desired_turret > pi:
             desired_turret -= 2 * pi
         while desired_turret < -pi:
             desired_turret += 2 * pi
 
-        # Shortest path: command the equivalent angle closest to current position to avoid full revolution
+        # Physical range: [0, max_radians] (zero to hard stop). Map desired to this range only.
+        max_radians = rotationsToRadians(Constants.TurretConstants.MAX_ROTATIONS)
+        desired_in_range = desired_turret
+        while desired_in_range < 0:
+            desired_in_range += 2 * pi
+        while desired_in_range > max_radians:
+            desired_in_range -= 2 * pi
+
         current_turret = rotationsToRadians(
             self._inputs.turret_position - self._inputs.turret_zero_position
         )
-        delta = desired_turret - current_turret
-        while delta > pi:
-            delta -= 2 * pi
-        while delta < -pi:
-            delta += 2 * pi
-        command_turret = current_turret + delta
+        middle = max_radians / 2
+        hysteresis_rad = deg_to_rad(Constants.TurretConstants.CROSS_MIDDLE_HYSTERESIS_DEGREES)
+
+        # Only switch to the other side of center if goal is at least 5° past the middle
+        on_left = current_turret < middle
+        goal_on_right = desired_in_range > middle
+        goal_on_left = desired_in_range < middle
+
+        if on_left and goal_on_right:
+            if desired_in_range < middle + hysteresis_rad:
+                command_turret = current_turret  # hold, don't cross yet
+            else:
+                command_turret = desired_in_range
+        elif not on_left and goal_on_left:
+            if desired_in_range > middle - hysteresis_rad:
+                command_turret = current_turret  # hold, don't cross yet
+            else:
+                command_turret = desired_in_range
+        else:
+            command_turret = desired_in_range
 
         self.target_radians = field_angle_to_goal
         self._io.set_position(command_turret)
@@ -150,3 +172,7 @@ class TurretSubsystem(StateSubsystem):
             self.rotate_to_goal(desired_state)
         else:
             self.rotate_manually(0.0)
+
+    def get_component_pose(self) -> Pose3d:
+        """Gets the articulated component pose for AdvantageScope."""
+        return Pose3d(-0.1524, 0, 0, Rotation3d(0, 0, self._inputs.turret_position))

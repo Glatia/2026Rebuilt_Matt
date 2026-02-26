@@ -93,6 +93,8 @@ class LauncherSubsystem(StateSubsystem):
             base_velocity = self._state_configs[self.SubsystemState.SCORE]
             if self.distance > Constants.HoodConstants.MAX_DISTANCE_FOR_SLOW_LAUNCH:
                 self._desired_motorRPS = base_velocity + 10.0
+            elif self.distance <= Constants.HoodConstants.MAX_DISTANCE_FOR_MEDIUM_LAUNCH and self.distance > Constants.HoodConstants.MAX_DISTANCE_FOR_SLOW_LAUNCH:
+                self._desired_motorRPS = base_velocity + 5.0
             else:
                 self._desired_motorRPS = base_velocity
             self._io.setMotorRPS(self._desired_motorRPS)

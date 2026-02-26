@@ -4,7 +4,7 @@ from typing import Final
 
 from phoenix6 import BaseStatusSignal
 from phoenix6.configs import TalonFXConfiguration
-from phoenix6.controls import PositionVoltage, VelocityVoltage
+from phoenix6.controls import PositionVoltage, MotionMagicVoltage, VelocityVoltage
 from phoenix6.hardware import TalonFX
 from phoenix6.signals import NeutralModeValue, InvertedValue
 from pykit.autolog import autolog
@@ -74,6 +74,8 @@ class TurretIOTalonFX(TurretIO):
 
         motor_config = TalonFXConfiguration()
         motor_config.slot0 = Constants.TurretConstants.GAINS
+        motor_config.motion_magic.motion_magic_cruise_velocity = Constants.TurretConstants.MM_VELOCITY
+        motor_config.motion_magic.motion_magic_acceleration = Constants.TurretConstants.MM_ACCELERATION
         motor_config.feedback.sensor_to_mechanism_ratio = Constants.TurretConstants.GEAR_RATIO
         motor_config.motor_output.neutral_mode = NeutralModeValue.BRAKE
         motor_config.motor_output.inverted = InvertedValue.CLOCKWISE_POSITIVE
@@ -101,7 +103,7 @@ class TurretIOTalonFX(TurretIO):
 
         self.turret_motor.optimize_bus_utilization()
 
-        self.position_request = PositionVoltage(0)
+        self.position_request = MotionMagicVoltage(0) # MotionMagicVoltage(0) #PositionVoltage(0)
         self.velocity_request = VelocityVoltage(0)
 
     def update_inputs(self, inputs: TurretIO.TurretIOInputs):
@@ -139,8 +141,8 @@ class TurretIOTalonFX(TurretIO):
         elif rotations < self._zero_position:
             rotations = self._zero_position
             print("Turret position is too low, setting to zero")
-        self.position_request = PositionVoltage(rotations)
-        self.turret_motor.set_control(self.position_request)
+        #self.position_request.position(rotations) #PositionVoltage(rotations)
+        self.turret_motor.set_control(self.position_request.with_position(rotations))
 
     def set_velocity(self, velocity: float) -> None:
         """

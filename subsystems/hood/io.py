@@ -5,7 +5,7 @@ from typing import Final
 
 from phoenix6 import BaseStatusSignal
 from phoenix6.configs import TalonFXConfiguration
-from phoenix6.controls import PositionVoltage, VelocityVoltage
+from phoenix6.controls import MotionMagicVoltage,PositionVoltage, VelocityVoltage
 from phoenix6.hardware import TalonFX
 from phoenix6.signals import InvertedValue
 from phoenix6.signals import NeutralModeValue
